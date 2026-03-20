@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test $(find src -name '*.test.ts')"
+    "test": "tsx --test $(find src -name '*.test.ts')",
+    "db:schema": "node scripts/run-sql.mjs db/init/001_schema.sql",
+    "db:seed": "node scripts/run-sql.mjs db/init/002_seed.sql",
+    "db:setup": "node scripts/run-sql.mjs db/init/001_schema.sql db/init/002_seed.sql"
   },
   "dependencies": {
     "@types/node": "^25.5.0",

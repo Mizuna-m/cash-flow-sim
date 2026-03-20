@@ -1,3 +1,5 @@
+import { SimulationPreview } from "@/src/components/simulation-preview";
+
 const milestones = [
   {
     title: "Simulation Core",
@@ -85,6 +87,8 @@ export function HomeDashboard() {
           </article>
         ))}
       </section>
+
+      <SimulationPreview />
     </main>
   );
 }

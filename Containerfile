@@ -1,9 +1,9 @@
-FROM node:20-bookworm-slim
+FROM docker.io/library/node:20
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
