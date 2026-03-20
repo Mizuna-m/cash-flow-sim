@@ -21,7 +21,7 @@ const pillars = [
   "Forecasts grounded in recorded history"
 ] as const;
 
-export function HomeDashboard() {
+export async function HomeDashboard() {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-12 md:px-10">
       <section className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/75 p-8 shadow-panel backdrop-blur md:p-12">

@@ -1,3 +1,4 @@
+import { buildDatabaseSimulation } from "@/src/application/services/build-database-simulation";
 import { buildDemoSimulation } from "@/src/application/services/build-demo-simulation";
 
 function formatYen(value: string) {
@@ -8,8 +9,14 @@ function formatYen(value: string) {
   }).format(Number(value));
 }
 
-export function SimulationPreview() {
-  const snapshots = buildDemoSimulation();
+export async function SimulationPreview() {
+  const simulation = await buildDatabaseSimulation().catch(() => ({
+    snapshots: buildDemoSimulation(),
+    source: "demo" as const,
+    startDate: "2026-03-01",
+    endDate: "2026-03-06"
+  }));
+  const { snapshots, source, startDate, endDate } = simulation;
 
   return (
     <section className="rounded-[2rem] border border-white/60 bg-white/75 p-8 shadow-panel backdrop-blur">
@@ -21,7 +28,9 @@ export function SimulationPreview() {
           <h2 className="mt-2 text-3xl font-semibold">純関数シミュレーションの現在地</h2>
         </div>
         <p className="max-w-xl text-sm leading-7 text-ink/70">
-          まだ DB 読み込み前ですが、理論残高、現実残高、カード残高が日次でどう動くかを画面上で確認できる状態にしました。
+          {source === "database"
+            ? `seed 済みの DB データを使って ${startDate} から ${endDate} までの日次残高を描画しています。`
+            : "DB 取得に失敗した場合でも、デモデータで理論残高、現実残高、カード残高の挙動を確認できます。"}
         </p>
       </div>
 

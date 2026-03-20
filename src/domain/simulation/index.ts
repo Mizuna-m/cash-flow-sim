@@ -69,7 +69,6 @@ function applyEvent(
       incrementCardBalance(cardBalances, cardId, amount.abs().negated());
       break;
     case "balance-event":
-      actualBalance = actualBalance.plus(amount);
       break;
     default:
       break;

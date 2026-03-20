@@ -38,12 +38,14 @@ Status の意味:
 * `npm run db:setup` で schema / seed を DB へ適用済み
 * `lint` / `typecheck` / `build` / `test` は通過済み
 * ホーム画面にサンプルシミュレーションのプレビューを追加済み
+* `api/simulation` は DB seed から日次残高を返す状態
+* `api/accounts` と `api/transactions` の GET / POST を追加済み
 
 次に着手するべきこと:
 
-* seed データを DB から読み出す導線の実装
+* `scheduled_events` / `card_payments` / `balance_events` API の追加
 * シミュレーションロジックの対応イベント拡張
-* CRUD / simulation API の実装開始
+* 画面から DB データを編集する UI の追加
 
 ---
 
@@ -54,10 +56,10 @@ Status の意味:
 | M0 | 実装方針の固定化 | DONE | 実装方針とタスクリストが文書化されている | 本ファイルと `implementation-plan.md` を作成 |
 | M1 | Next.js + Podman の土台作成 | DONE | app と db がローカル起動する | compose build / up と HTTP 応答を確認済み |
 | M2 | DB スキーマ初版 | DONE | MVP中核エンティティのテーブルとマイグレーションがある | 初版 SQL と適用スクリプトを追加し、実 DB へ適用済み |
-| M3 | seed データ整備 | DOING | 主要ユースケースを再現できる seed がある | 初版 SQL seed を投入済み。アプリからの読取導線は未実装 |
-| M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | 最小実装とテストは追加済み。イベント種別の拡張が未実施 |
+| M3 | seed データ整備 | DOING | 主要ユースケースを再現できる seed がある | 初版 SQL seed を投入済み。simulation API と account/transaction API からは参照可能 |
+| M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。予測系と詳細イベント拡張が未実施 |
 | M5 | 予測ロジック実装 | TODO | DailySpendForecast と CardPaymentForecast が動く | 実績優先ルール必須 |
-| M6 | API 実装 | TODO | CRUD と simulation API が動く | Route Handler でよい |
+| M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions を実装済み |
 | M7 | 最小UI 実装 | TODO | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | グラフ含む |
 | M8 | シナリオ比較 | TODO | イベントON/OFFと比較ができる | MVP終盤でよい |
 | M9 | 移行導線の初版 | TODO | 直近3〜6か月を投入できる | CSVまたは手入力補助 |
@@ -78,15 +80,15 @@ Status の意味:
 | T07 | Transaction スキーマ作成 | DONE | T05 | amount, tags, card_id, order_index を保存できる |
 | T08 | ScheduledEvent / BalanceEvent / CardPayment スキーマ作成 | DONE | T05 | 各イベントが保存できる |
 | T09 | seed データセット作成 | DOING | T06,T07,T08 | 主要ケースを1回で投入でき、実 DB に適用済み |
-| T10 | イベント正規化ロジック実装 | DOING | T09 | 各種イベントを共通形式に変換できる |
+| T10 | イベント正規化ロジック実装 | DOING | T09 | Transaction / ScheduledEvent / BalanceEvent / CardPayment を simulation 用に変換できる |
 | T11 | 同日内ソート実装 | DONE | T10 | `order_index` で順序制御できる |
 | T12 | 残高更新ロジック実装 | DOING | T10,T11 | 理論残高 / 現実残高 / カード残高が更新される |
 | T13 | ショート判定実装 | TODO | T12 | 閾値未満の日を抽出できる |
 | T14 | カード引落予測生成 | TODO | T12 | 締日・支払日から forecast を作れる |
 | T15 | 日常支出予測生成 | TODO | T09 | 実績欠損日に予測適用できる |
 | T16 | 実績優先ルール実装 | TODO | T14,T15 | 実績がある日には予測を抑制できる |
-| T17 | シミュレーション API | TODO | T12,T14,T15,T16 | 期間指定で結果を返せる |
-| T18 | CRUD API | TODO | T06,T07,T08 | 主要エンティティを操作できる |
+| T17 | シミュレーション API | DONE | T12,T14,T15,T16 | 期間指定で結果を返せる |
+| T18 | CRUD API | DOING | T06,T07,T08 | accounts / transactions は実装済み |
 | T19 | ダッシュボード画面 | TODO | T17 | 残高サマリが見える |
 | T20 | 取引入力画面 | TODO | T18 | Transaction 登録できる |
 | T21 | 予定入力画面 | TODO | T18 | ScheduledEvent 登録できる |
@@ -144,7 +146,7 @@ Status の意味:
 
 次の実装着手はこの順がよい。
 
-1. DB から Transaction / ScheduledEvent / CardPayment を読む repository を作る
-2. seed データを使う simulation API を作る
-3. T10-T16 `シミュレーション / 予測` を実データ対応で広げる
-4. CRUD API に着手する
+1. `scheduled_events` / `card_payments` / `balance_events` API を作る
+2. T10-T16 `シミュレーション / 予測` を実データ対応で広げる
+3. 画面から accounts / transactions を編集できる UI を作る
+4. 予測ロジックの初版に着手する

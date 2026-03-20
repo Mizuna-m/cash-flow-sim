@@ -80,3 +80,26 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
     "main-card": "-80.00"
   });
 });
+
+test("simulateRange does not change aggregate actual balance for balance-event transfers", () => {
+  const snapshots = simulateRange({
+    startDate: "2026-03-01",
+    endDate: "2026-03-01",
+    threshold: "0",
+    defaultCardId: "default-card",
+    initialTheoreticalBalance: "1000",
+    initialActualBalance: "1000",
+    events: [
+      {
+        id: "transfer",
+        date: "2026-03-01",
+        kind: "balance-event",
+        amount: "100",
+        orderIndex: 1
+      }
+    ]
+  });
+
+  assert.equal(snapshots[0]?.theoreticalBalance, "1000.00");
+  assert.equal(snapshots[0]?.actualBalance, "1000.00");
+});
