@@ -1,0 +1,702 @@
+openapi: 3.1.0
+info:
+  title: Cash Flow Simulator API
+  version: 0.1.0
+  summary: MVP API specification for the cash flow simulation system
+  description: |
+    Frontend handoff specification for the current MVP API.
+
+    Maintenance rule:
+    - When request/response shapes, query parameters, status codes, or endpoint behavior change,
+      update this OpenAPI document in the same change set.
+    - Treat this file as the canonical contract for frontend implementation and API review.
+servers:
+  - url: http://127.0.0.1:3000
+    description: Local development
+tags:
+  - name: Health
+  - name: Accounts
+  - name: Transactions
+  - name: ScheduledEvents
+  - name: BalanceEvents
+  - name: CardPayments
+  - name: Simulation
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Get application health
+      operationId: getHealth
+      responses:
+        "200":
+          description: Application health payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/accounts:
+    get:
+      tags: [Accounts]
+      summary: List accounts
+      operationId: listAccounts
+      responses:
+        "200":
+          description: Account list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accounts]
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Account"
+    post:
+      tags: [Accounts]
+      summary: Create account
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountCreateRequest"
+      responses:
+        "201":
+          description: Created account
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [account]
+                properties:
+                  account:
+                    $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/transactions:
+    get:
+      tags: [Transactions]
+      summary: List transactions
+      operationId: listTransactions
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+      responses:
+        "200":
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transactions]
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+    post:
+      tags: [Transactions]
+      summary: Create transaction
+      operationId: createTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionCreateRequest"
+      responses:
+        "201":
+          description: Created transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transaction]
+                properties:
+                  transaction:
+                    $ref: "#/components/schemas/Transaction"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scheduled-events:
+    get:
+      tags: [ScheduledEvents]
+      summary: List scheduled events
+      operationId: listScheduledEvents
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - name: isActive
+          in: query
+          required: false
+          description: Filter by active flag
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Scheduled event list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [scheduledEvents]
+                properties:
+                  scheduledEvents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScheduledEvent"
+    post:
+      tags: [ScheduledEvents]
+      summary: Create scheduled event
+      operationId: createScheduledEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledEventCreateRequest"
+      responses:
+        "201":
+          description: Created scheduled event
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [scheduledEvent]
+                properties:
+                  scheduledEvent:
+                    $ref: "#/components/schemas/ScheduledEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/balance-events:
+    get:
+      tags: [BalanceEvents]
+      summary: List balance events
+      operationId: listBalanceEvents
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+      responses:
+        "200":
+          description: Balance event list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [balanceEvents]
+                properties:
+                  balanceEvents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BalanceEvent"
+    post:
+      tags: [BalanceEvents]
+      summary: Create balance event
+      operationId: createBalanceEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BalanceEventCreateRequest"
+      responses:
+        "201":
+          description: Created balance event
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [balanceEvent]
+                properties:
+                  balanceEvent:
+                    $ref: "#/components/schemas/BalanceEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/card-payments:
+    get:
+      tags: [CardPayments]
+      summary: List card payments
+      operationId: listCardPayments
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+      responses:
+        "200":
+          description: Card payment list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cardPayments]
+                properties:
+                  cardPayments:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CardPayment"
+    post:
+      tags: [CardPayments]
+      summary: Create card payment
+      operationId: createCardPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardPaymentCreateRequest"
+      responses:
+        "201":
+          description: Created card payment
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cardPayment]
+                properties:
+                  cardPayment:
+                    $ref: "#/components/schemas/CardPayment"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/simulation:
+    get:
+      tags: [Simulation]
+      summary: Get simulation result
+      operationId: getSimulation
+      parameters:
+        - $ref: "#/components/parameters/SimulationStartDate"
+        - $ref: "#/components/parameters/SimulationEndDate"
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationResponse"
+        "500":
+          description: Simulation build error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationErrorResponse"
+
+components:
+  parameters:
+    StartDate:
+      name: startDate
+      in: query
+      required: false
+      description: Inclusive start date filter (`YYYY-MM-DD`)
+      schema:
+        type: string
+        format: date
+    EndDate:
+      name: endDate
+      in: query
+      required: false
+      description: Inclusive end date filter (`YYYY-MM-DD`)
+      schema:
+        type: string
+        format: date
+    SimulationStartDate:
+      name: startDate
+      in: query
+      required: false
+      description: Inclusive simulation start date. Defaults to `2026-03-01`.
+      schema:
+        type: string
+        format: date
+        default: "2026-03-01"
+    SimulationEndDate:
+      name: endDate
+      in: query
+      required: false
+      description: Inclusive simulation end date. Defaults to `2026-03-31`.
+      schema:
+        type: string
+        format: date
+        default: "2026-03-31"
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    SimulationErrorResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+    HealthResponse:
+      type: object
+      required: [status, baseCurrency, defaultCardId]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        baseCurrency:
+          type: string
+        defaultCardId:
+          type: string
+
+    JsonTags:
+      type: object
+      additionalProperties: true
+      description: Flexible tag payload. Current usage commonly includes `category` and `project`.
+
+    AccountType:
+      type: string
+      enum: [cash, bank, credit, loan, investment]
+
+    Account:
+      type: object
+      required:
+        [id, name, type, currency, initialBalance, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidLike"
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/AccountType"
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        initialBalance:
+          type: string
+          description: Decimal string
+          example: "250000.00"
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    AccountCreateRequest:
+      type: object
+      required: [name, type, currency, initialBalance]
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/AccountType"
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        initialBalance:
+          oneOf:
+            - type: string
+            - type: number
+
+    Transaction:
+      type: object
+      required:
+        [id, date, amount, tags, cardId, memo, orderIndex, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidLike"
+        date:
+          type: string
+          format: date
+        amount:
+          type: string
+          description: Signed decimal string
+        tags:
+          $ref: "#/components/schemas/JsonTags"
+        cardId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        memo:
+          type: string
+        orderIndex:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    TransactionCreateRequest:
+      type: object
+      required: [date, amount]
+      properties:
+        date:
+          type: string
+          format: date
+        amount:
+          oneOf:
+            - type: string
+            - type: number
+        tags:
+          $ref: "#/components/schemas/JsonTags"
+        cardId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        memo:
+          type: string
+          default: ""
+        orderIndex:
+          type: integer
+          minimum: 0
+          default: 0
+
+    ScheduledEvent:
+      type: object
+      required:
+        [id, name, startDate, endDate, recurrenceRule, amount, tags, cardId, isActive, orderIndex, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidLike"
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          anyOf:
+            - type: string
+              format: date
+            - type: "null"
+        recurrenceRule:
+          anyOf:
+            - type: string
+            - type: "null"
+        amount:
+          type: string
+        tags:
+          $ref: "#/components/schemas/JsonTags"
+        cardId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        isActive:
+          type: boolean
+        orderIndex:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ScheduledEventCreateRequest:
+      type: object
+      required: [name, startDate, amount]
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          anyOf:
+            - type: string
+              format: date
+            - type: "null"
+        recurrenceRule:
+          anyOf:
+            - type: string
+            - type: "null"
+        amount:
+          oneOf:
+            - type: string
+            - type: number
+        tags:
+          $ref: "#/components/schemas/JsonTags"
+        cardId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        isActive:
+          type: boolean
+          default: true
+        orderIndex:
+          type: integer
+          minimum: 0
+          default: 0
+
+    BalanceEvent:
+      type: object
+      required:
+        [id, date, fromAccountId, toAccountId, amount, memo, orderIndex, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidLike"
+        date:
+          type: string
+          format: date
+        fromAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        toAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        amount:
+          type: string
+        memo:
+          type: string
+        orderIndex:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    BalanceEventCreateRequest:
+      type: object
+      required: [date, amount]
+      properties:
+        date:
+          type: string
+          format: date
+        fromAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        toAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        amount:
+          oneOf:
+            - type: string
+            - type: number
+        memo:
+          type: string
+          default: ""
+        orderIndex:
+          type: integer
+          minimum: 0
+          default: 0
+
+    CardPayment:
+      type: object
+      required:
+        [id, creditCardId, sourceAccountId, date, amount, memo, orderIndex, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidLike"
+        creditCardId:
+          $ref: "#/components/schemas/UuidLike"
+        sourceAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        date:
+          type: string
+          format: date
+        amount:
+          type: string
+        memo:
+          type: string
+        orderIndex:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    CardPaymentCreateRequest:
+      type: object
+      required: [creditCardId, date, amount]
+      properties:
+        creditCardId:
+          $ref: "#/components/schemas/UuidLike"
+        sourceAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        date:
+          type: string
+          format: date
+        amount:
+          oneOf:
+            - type: string
+            - type: number
+        memo:
+          type: string
+          default: ""
+        orderIndex:
+          type: integer
+          minimum: 0
+          default: 0
+
+    DailySimulationSnapshot:
+      type: object
+      required: [date, theoreticalBalance, actualBalance, short, cardBalances]
+      properties:
+        date:
+          type: string
+          format: date
+        theoreticalBalance:
+          type: string
+        actualBalance:
+          type: string
+        short:
+          type: boolean
+        cardBalances:
+          type: object
+          additionalProperties:
+            type: string
+
+    SimulationResponse:
+      type: object
+      required: [snapshots, source, startDate, endDate]
+      properties:
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailySimulationSnapshot"
+        source:
+          type: string
+          enum: [database, demo]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    UuidLike:
+      type: string
+      description: UUID-like identifier currently accepted by the backend validation layer
+      pattern: "^[0-9a-fA-F-]{36}$"

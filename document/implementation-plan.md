@@ -28,6 +28,7 @@
 * 受け入れ観点: `accept-criteria.md`
 * 技術方針: `technical-stack.md`
 * 移行方針: `migration.md`
+* API 契約: `openapi.yaml`
 
 実装着手前の前提としては十分強いが、以下はまだ不足気味。
 
@@ -35,6 +36,8 @@
 * シナリオの永続化モデル詳細
 * 日常支出予測ロジックの具体式
 * 多通貨・投資を MVP に含めるかの最終線引き
+
+API 実装については、フロント引き渡しの契約として `document/openapi.yaml` を継続管理対象に含める。
 
 ---
 

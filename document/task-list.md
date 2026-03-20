@@ -47,12 +47,14 @@ Status の意味:
 * card payment / balance event の POST を実行し、DB 保存と API 再取得を確認済み
 * DailySpendForecast / CardPaymentForecast の初版ロジックを simulation に組み込み済み
 * `/api/simulation` で future 側に forecast が反映されることを確認済み
+* `document/openapi.yaml` を API 契約の正本として追加済み
 
 次に着手するべきこと:
 
 * 予測ロジックの精度と説明メタデータを改善
 * 入力後の一覧反映や簡易フィードバックの磨き込み
 * simulation 画面で forecast と実績を見分けやすくする
+* API 変更時に OpenAPI も更新する運用を維持する
 
 ---
 
