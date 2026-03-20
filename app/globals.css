@@ -4,10 +4,12 @@
 
 :root {
   color-scheme: light;
+  background-color: #ebe2d0;
   background:
-    radial-gradient(circle at top left, rgba(212, 106, 76, 0.18), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(112, 139, 117, 0.18), transparent 36%),
-    linear-gradient(180deg, #f6f2e8 0%, #efe8d8 100%);
+    radial-gradient(circle at top left, rgba(212, 106, 76, 0.22), transparent 28%),
+    radial-gradient(circle at 85% 20%, rgba(185, 138, 59, 0.18), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(112, 139, 117, 0.2), transparent 34%),
+    linear-gradient(180deg, #f8f3e8 0%, #efe4d0 52%, #e8dcc8 100%);
   color: #13212b;
 }
 
@@ -20,9 +22,30 @@ body {
   min-height: 100vh;
   font-family: "Avenir Next", "Hiragino Sans", sans-serif;
   color: #13212b;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0)),
+    var(--page-texture, transparent);
+  letter-spacing: 0.01em;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(19, 33, 43, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(19, 33, 43, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.38), transparent 72%);
+  z-index: -1;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+::selection {
+  background: rgba(212, 106, 76, 0.22);
 }

@@ -2,99 +2,73 @@ import { DataOverview } from "@/src/components/data-overview";
 import { QuickEntrySection } from "@/src/components/quick-entry-section";
 import { SimulationPreview } from "@/src/components/simulation-preview";
 
-const milestones = [
+const statusCards = [
   {
-    title: "Simulation Core",
-    detail: "理論残高・現実残高・カード残高を純関数で計算する"
+    label: "Main flow",
+    value: "入力 -> 確認 -> preview",
+    detail: "作業順がそのまま画面構造になるように並べ替えています"
   },
   {
-    title: "Forecasting",
-    detail: "日常支出予測とカード引落予測を時系列へ重ねる"
+    label: "Primary action",
+    value: "Transaction を追加",
+    detail: "最初の検証は transaction か scheduled event から始める想定です"
   },
   {
-    title: "Scenario Compare",
-    detail: "イベント ON/OFF と比較で意思決定を支援する"
+    label: "Health",
+    value: "`/api/health`",
+    detail: "起動確認は API と UI の両方から追えます"
   }
-] as const;
-
-const pillars = [
-  "Theoretical vs Actual balance",
-  "Card usage and payment separation",
-  "Forecasts grounded in recorded history"
 ] as const;
 
 export async function HomeDashboard() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-12 md:px-10">
-      <section className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/75 p-8 shadow-panel backdrop-blur md:p-12">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-ember">
-              Cash Flow Simulation Workspace
-            </p>
-            <div className="space-y-4">
-              <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
-                実績と予定をつないで、
-                <span className="block text-moss">将来の資金ショートを先回りする。</span>
-              </h1>
-              <p className="max-w-2xl text-base leading-8 text-ink/75 md:text-lg">
-                この初期画面は、要件から整理した実装の中心線を可視化するための土台です。まずは
-                シミュレーションコアを安定させ、その上に予測、CRUD、可視化を積み上げます。
+    <main className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-5 py-5 md:px-8 md:py-8 xl:px-10">
+      <section className="rounded-[1.8rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(247,242,233,0.88))] p-6 shadow-panel backdrop-blur md:p-7">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-ink/65">
+                Cash Flow Simulator
+              </p>
+              <p className="rounded-full border border-moss/20 bg-moss/10 px-3 py-1.5 text-xs font-medium text-ink/70">
+                開発中でも実作業しやすい管理画面
               </p>
             </div>
-          </div>
-          <div className="rounded-[1.5rem] bg-ink px-6 py-5 text-sand shadow-panel">
-            <p className="text-sm uppercase tracking-[0.2em] text-sand/70">Current focus</p>
-            <p className="mt-3 text-3xl font-semibold">Phase 1</p>
-            <p className="mt-2 max-w-xs text-sm leading-7 text-sand/80">
-              Next.js モノリス、PostgreSQL 接続準備、純関数シミュレーションの置き場を作成済み。
+            <h1 className="mt-3 text-2xl font-semibold leading-tight text-ink md:text-4xl">
+              入力と確認を同時に回せる、
+              <span className="block text-ink/78">テスト用の実務画面に寄せる。</span>
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-ink/64">
+              大きな説明より、手を動かすための画面を優先しています。左で入力し、右で一覧と preview を見て、すぐ次の操作に戻れる構成です。
             </p>
           </div>
-        </div>
-      </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-[2rem] border border-white/60 bg-white/70 p-8 shadow-panel backdrop-blur">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-brass">Core pillars</p>
-          <ul className="mt-5 grid gap-4">
-            {pillars.map((pillar) => (
-              <li
-                key={pillar}
-                className="rounded-2xl border border-ink/10 bg-sand/70 px-5 py-4 text-base font-medium text-ink"
+          <div className="grid gap-3 md:grid-cols-3 xl:min-w-[640px] xl:max-w-[760px]">
+            {statusCards.map((card) => (
+              <article
+                key={card.label}
+                className="rounded-[1.35rem] border border-ink/10 bg-white/82 px-4 py-4"
               >
-                {pillar}
-              </li>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brass">
+                  {card.label}
+                </p>
+                <p className="mt-2 text-lg font-semibold text-ink">{card.value}</p>
+                <p className="mt-2 text-sm leading-6 text-ink/60">{card.detail}</p>
+              </article>
             ))}
-          </ul>
-        </div>
-
-        <div className="rounded-[2rem] border border-white/60 bg-ink p-8 text-sand shadow-panel">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-sand/70">Health check</p>
-          <p className="mt-4 text-3xl font-semibold">`/api/health`</p>
-          <p className="mt-4 text-sm leading-7 text-sand/80">
-            環境変数が読めることと、アプリが起動していることを確認する最小 API を用意しています。
-            DB 接続テストは次のステップで追加します。
-          </p>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-3">
-        {milestones.map((milestone) => (
-          <article
-            key={milestone.title}
-            className="rounded-[1.75rem] border border-white/60 bg-white/70 p-6 shadow-panel backdrop-blur"
-          >
-            <p className="text-sm uppercase tracking-[0.2em] text-ember">{milestone.title}</p>
-            <p className="mt-4 text-base leading-7 text-ink/80">{milestone.detail}</p>
-          </article>
-        ))}
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)] xl:items-start">
+        <div className="min-w-0">
+          <QuickEntrySection />
+        </div>
+        <div className="grid min-w-0 gap-5">
+          <DataOverview />
+          <SimulationPreview />
+        </div>
       </section>
-
-      <DataOverview />
-
-      <QuickEntrySection />
-
-      <SimulationPreview />
     </main>
   );
 }
