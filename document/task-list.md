@@ -27,14 +27,16 @@ Status の意味:
 
 現在の状態:
 
-* リポジトリには `document/` 配下の設計文書のみ存在
-* アプリ、DB スキーマ、テスト、コンテナ設定は未作成
-* 実装前の整理として `implementation-plan.md` と本ファイルを追加済み
+* Next.js App Router の雛形を追加済み
+* `compose.yml` / `Containerfile` / `.env.example` を追加済み
+* DB 接続準備と初版スキーマ SQL を追加済み
+* `lint` / `typecheck` / `build` は通過済み
+* Podman machine の存在は確認したが、compose 実行時は Podman socket 接続拒否で未確認
 
 次に着手するべきこと:
 
-* プロジェクト雛形作成
-* コンテナ / DB 基盤作成
+* Podman 接続拒否の解消後に app/db の実起動確認
+* DB アクセス方法とマイグレーション運用の確定
 * seed 前提の最小データモデル確定
 
 ---
@@ -44,8 +46,8 @@ Status の意味:
 | ID | Task | Status | Exit Criteria | Notes |
 | --- | --- | --- | --- | --- |
 | M0 | 実装方針の固定化 | DONE | 実装方針とタスクリストが文書化されている | 本ファイルと `implementation-plan.md` を作成 |
-| M1 | Next.js + Podman の土台作成 | TODO | app と db がローカル起動する | App Router 前提 |
-| M2 | DB スキーマ初版 | TODO | MVP中核エンティティのテーブルとマイグレーションがある | Transaction, Account, CreditCard, ScheduledEvent, BalanceEvent, CardPayment |
+| M1 | Next.js + Podman の土台作成 | DOING | app と db がローカル起動する | App Router 前提。アプリ雛形、compose、build/lint/typecheck は完了。Podman socket 接続拒否のため実起動確認のみ未実施 |
+| M2 | DB スキーマ初版 | DOING | MVP中核エンティティのテーブルとマイグレーションがある | 初版 SQL を追加済み。実 DB 適用確認は未実施 |
 | M3 | seed データ整備 | TODO | 主要ユースケースを再現できる seed がある | ショート検知、カード予測、Project 集計を含む |
 | M4 | シミュレーションコア実装 | TODO | 日次残高・カード残高・ショート判定が計算できる | 純関数で実装 |
 | M5 | 予測ロジック実装 | TODO | DailySpendForecast と CardPaymentForecast が動く | 実績優先ルール必須 |
@@ -61,14 +63,14 @@ Status の意味:
 
 | ID | Task | Status | Depends On | Done When |
 | --- | --- | --- | --- | --- |
-| T01 | Next.js App Router 初期化 | TODO | M1 | 開発サーバが起動する |
-| T02 | Tailwind 設定 | TODO | T01 | 最小画面が描画できる |
-| T03 | Podman / compose 構成追加 | TODO | T01 | app/db 同時起動ができる |
-| T04 | PostgreSQL 接続層追加 | TODO | T03 | アプリからDB接続確認できる |
+| T01 | Next.js App Router 初期化 | DONE | M1 | 開発サーバが起動する |
+| T02 | Tailwind 設定 | DONE | T01 | 最小画面が描画できる |
+| T03 | Podman / compose 構成追加 | BLOCKED | T01 | app/db 同時起動ができる |
+| T04 | PostgreSQL 接続層追加 | DONE | T03 | アプリからDB接続確認できる |
 | T05 | DB アクセス方法の選定と導入 | TODO | T04 | マイグレーション運用が決まる |
-| T06 | Account / CreditCard スキーマ作成 | TODO | T05 | 初期残高とカード設定が保存できる |
-| T07 | Transaction スキーマ作成 | TODO | T05 | amount, tags, card_id, order_index を保存できる |
-| T08 | ScheduledEvent / BalanceEvent / CardPayment スキーマ作成 | TODO | T05 | 各イベントが保存できる |
+| T06 | Account / CreditCard スキーマ作成 | DONE | T05 | 初期残高とカード設定が保存できる |
+| T07 | Transaction スキーマ作成 | DONE | T05 | amount, tags, card_id, order_index を保存できる |
+| T08 | ScheduledEvent / BalanceEvent / CardPayment スキーマ作成 | DONE | T05 | 各イベントが保存できる |
 | T09 | seed データセット作成 | TODO | T06,T07,T08 | 主要ケースを1回で投入できる |
 | T10 | イベント正規化ロジック実装 | TODO | T09 | 各種イベントを共通形式に変換できる |
 | T11 | 同日内ソート実装 | TODO | T10 | `order_index` で順序制御できる |
@@ -138,8 +140,6 @@ Status の意味:
 
 1. T01 `Next.js App Router 初期化`
 2. T03 `Podman / compose 構成追加`
-3. T04 `PostgreSQL 接続層追加`
-4. T05 `DB アクセス方法の選定と導入`
-5. T06-T08 `スキーマ作成`
-6. T09 `seed データセット作成`
-7. T10-T16 `シミュレーション / 予測`
+3. T05 `DB アクセス方法の選定と導入`
+4. T09 `seed データセット作成`
+5. T10-T16 `シミュレーション / 予測`
