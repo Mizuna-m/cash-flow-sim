@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --test"
+    "test": "tsx --test $(find src -name '*.test.ts')"
   },
   "dependencies": {
     "@types/node": "^25.5.0",
@@ -26,6 +26,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.2.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "zod": "^4.3.6"
   }

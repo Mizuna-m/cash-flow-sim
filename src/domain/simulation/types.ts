@@ -27,6 +27,7 @@ export type SimulationInput = {
   startDate: string;
   endDate: string;
   threshold: string;
+  defaultCardId: string;
   initialTheoreticalBalance: string;
   initialActualBalance: string;
   events: SimulationEvent[];
