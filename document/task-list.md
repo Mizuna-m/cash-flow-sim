@@ -45,12 +45,14 @@ Status の意味:
 * ホーム画面に accounts / transactions / scheduled events の quick entry フォームを追加済み
 * transaction の POST を実行し、DB 保存と API 再取得を確認済み
 * card payment / balance event の POST を実行し、DB 保存と API 再取得を確認済み
+* DailySpendForecast / CardPaymentForecast の初版ロジックを simulation に組み込み済み
+* `/api/simulation` で future 側に forecast が反映されることを確認済み
 
 次に着手するべきこと:
 
-* シミュレーションロジックの対応イベント拡張
-* 予測ロジックの初版実装
+* 予測ロジックの精度と説明メタデータを改善
 * 入力後の一覧反映や簡易フィードバックの磨き込み
+* simulation 画面で forecast と実績を見分けやすくする
 
 ---
 
@@ -63,7 +65,7 @@ Status の意味:
 | M2 | DB スキーマ初版 | DONE | MVP中核エンティティのテーブルとマイグレーションがある | 初版 SQL と適用スクリプトを追加し、実 DB へ適用済み |
 | M3 | seed データ整備 | DOING | 主要ユースケースを再現できる seed がある | 初版 SQL seed を投入済み。simulation API と account/transaction API からは参照可能 |
 | M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。予測系と詳細イベント拡張が未実施 |
-| M5 | 予測ロジック実装 | TODO | DailySpendForecast と CardPaymentForecast が動く | 実績優先ルール必須 |
+| M5 | 予測ロジック実装 | DOING | DailySpendForecast と CardPaymentForecast が動く | 初版ロジックは実装済み。精度調整と説明メタデータは未実装 |
 | M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions、scheduled-events、card-payments、balance-events を実装済み |
 | M7 | 最小UI 実装 | DOING | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | ダッシュボードに DB overview と主要イベントの quick entry を追加済み。入力後の磨き込みは未実装 |
 | M8 | シナリオ比較 | TODO | イベントON/OFFと比較ができる | MVP終盤でよい |
@@ -152,6 +154,6 @@ Status の意味:
 次の実装着手はこの順がよい。
 
 1. T10-T16 `シミュレーション / 予測` を実データ対応で広げる
-2. 予測ロジックの初版に着手する
-3. 入力後の一覧反映や簡易フィードバックを磨く
+2. 入力後の一覧反映や簡易フィードバックを磨く
+3. simulation 画面で forecast と実績を見分けやすくする
 4. シナリオ比較の土台となる ON/OFF 設計を入れる

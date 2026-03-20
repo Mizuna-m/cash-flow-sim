@@ -11,6 +11,9 @@ type AccountRow = {
 type CreditCardRow = {
   id: string;
   name: string;
+  closing_day: number;
+  payment_day: number;
+  settlement_account_id: string | null;
   is_default: boolean;
 };
 
@@ -18,6 +21,7 @@ type TransactionRow = {
   id: string;
   date: string;
   amount: string;
+  tags: Record<string, unknown>;
   card_id: string | null;
   order_index: number;
 };
@@ -70,14 +74,26 @@ export async function loadSimulationSeedData(
       ),
       dbPool.query<CreditCardRow>(
         `
-          SELECT id, name, is_default
+          SELECT
+            id,
+            name,
+            closing_day,
+            payment_day,
+            settlement_account_id::text,
+            is_default
           FROM credit_cards
           ORDER BY is_default DESC, name ASC
         `
       ),
       dbPool.query<TransactionRow>(
         `
-          SELECT id, date::text, amount::text, card_id::text, order_index
+          SELECT
+            id,
+            date::text,
+            amount::text,
+            tags,
+            card_id::text,
+            order_index
           FROM transactions
           WHERE date BETWEEN $1::date AND $2::date
           ORDER BY date ASC, order_index ASC, id ASC

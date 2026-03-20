@@ -1,4 +1,6 @@
 import Decimal from "decimal.js";
+import { generateCardPaymentForecastEvents } from "@/src/domain/forecast/card-payment";
+import { generateDailySpendForecastEvents } from "@/src/domain/forecast/daily-spend";
 import { simulateRange } from "@/src/domain/simulation";
 import type { SimulationEvent } from "@/src/domain/simulation/types";
 import { appEnv } from "@/src/infrastructure/db/env";
@@ -80,6 +82,40 @@ export async function buildDatabaseSimulation(
   const initialBalance = sumInitialBalances(data.accounts);
   const defaultCardId =
     data.creditCards.find((creditCard) => creditCard.is_default)?.id ?? appEnv.DEFAULT_CARD_ID;
+  const baseEvents = mapEvents(data);
+  const dailySpendForecastEvents = generateDailySpendForecastEvents({
+    startDate,
+    endDate,
+    transactions: data.transactions,
+    defaultCardId
+  });
+  const cardPaymentForecastEvents = generateCardPaymentForecastEvents({
+    startDate,
+    endDate,
+    defaultCardId,
+    creditCards: data.creditCards,
+    usageEvents: [
+      ...data.transactions.map((transaction) => ({
+        id: transaction.id,
+        date: transaction.date,
+        amount: transaction.amount,
+        cardId: transaction.card_id
+      })),
+      ...data.scheduledEvents.map((scheduledEvent) => ({
+        id: scheduledEvent.id,
+        date: scheduledEvent.start_date,
+        amount: scheduledEvent.amount,
+        cardId: scheduledEvent.card_id
+      })),
+      ...dailySpendForecastEvents.map((forecast) => ({
+        id: forecast.id,
+        date: forecast.date,
+        amount: forecast.amount,
+        cardId: forecast.cardId ?? defaultCardId
+      }))
+    ],
+    actualCardPayments: data.cardPayments
+  });
 
   const snapshots = simulateRange({
     startDate,
@@ -88,7 +124,7 @@ export async function buildDatabaseSimulation(
     defaultCardId,
     initialTheoreticalBalance: initialBalance.toFixed(2),
     initialActualBalance: initialBalance.toFixed(2),
-    events: mapEvents(data)
+    events: [...baseEvents, ...dailySpendForecastEvents, ...cardPaymentForecastEvents]
   });
 
   return {

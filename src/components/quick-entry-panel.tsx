@@ -278,7 +278,8 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
               className="space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
-                const formData = new FormData(event.currentTarget);
+                const form = event.currentTarget;
+                const formData = new FormData(form);
 
                 startTransition(async () => {
                   try {
@@ -292,7 +293,7 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
                         project: toTagList(String(formData.get("project") ?? ""))
                       }
                     });
-                    event.currentTarget.reset();
+                    form.reset();
                     setTransactionState({ message: "Transaction created.", kind: "success" });
                     router.refresh();
                   } catch (error) {
@@ -365,7 +366,8 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
               className="space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
-                const formData = new FormData(event.currentTarget);
+                const form = event.currentTarget;
+                const formData = new FormData(form);
 
                 startTransition(async () => {
                   try {
@@ -380,7 +382,7 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
                         project: toTagList(String(formData.get("project") ?? ""))
                       }
                     });
-                    event.currentTarget.reset();
+                    form.reset();
                     setScheduledState({ message: "Scheduled event created.", kind: "success" });
                     router.refresh();
                   } catch (error) {
@@ -457,7 +459,8 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
               className="space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
-                const formData = new FormData(event.currentTarget);
+                const form = event.currentTarget;
+                const formData = new FormData(form);
 
                 startTransition(async () => {
                   try {
@@ -469,7 +472,7 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
                       memo: String(formData.get("memo") ?? ""),
                       orderIndex: Number(formData.get("orderIndex") ?? 0)
                     });
-                    event.currentTarget.reset();
+                    form.reset();
                     setBalanceEventState({ message: "Balance event created.", kind: "success" });
                     router.refresh();
                   } catch (error) {
@@ -567,7 +570,8 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
               className="space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
-                const formData = new FormData(event.currentTarget);
+                const form = event.currentTarget;
+                const formData = new FormData(form);
 
                 startTransition(async () => {
                   try {
@@ -579,7 +583,7 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
                       memo: String(formData.get("memo") ?? ""),
                       orderIndex: Number(formData.get("orderIndex") ?? 0)
                     });
-                    event.currentTarget.reset();
+                    form.reset();
                     setCardPaymentState({ message: "Card payment created.", kind: "success" });
                     router.refresh();
                   } catch (error) {
@@ -675,7 +679,8 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
               className="space-y-5"
               onSubmit={(event) => {
                 event.preventDefault();
-                const formData = new FormData(event.currentTarget);
+                const form = event.currentTarget;
+                const formData = new FormData(form);
 
                 startTransition(async () => {
                   try {
@@ -685,7 +690,7 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
                       currency: String(formData.get("currency") ?? "JPY"),
                       initialBalance: String(formData.get("initialBalance") ?? "0")
                     });
-                    event.currentTarget.reset();
+                    form.reset();
                     setAccountState({ message: "Account created.", kind: "success" });
                     router.refresh();
                   } catch (error) {
