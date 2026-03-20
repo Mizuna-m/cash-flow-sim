@@ -40,12 +40,14 @@ Status の意味:
 * ホーム画面にサンプルシミュレーションのプレビューを追加済み
 * `api/simulation` は DB seed から日次残高を返す状態
 * `api/accounts` と `api/transactions` の GET / POST を追加済み
+* `api/scheduled-events` / `api/card-payments` / `api/balance-events` の GET / POST を追加済み
+* ホーム画面で accounts / transactions / scheduled events を DB から表示できる
 
 次に着手するべきこと:
 
-* `scheduled_events` / `card_payments` / `balance_events` API の追加
 * シミュレーションロジックの対応イベント拡張
 * 画面から DB データを編集する UI の追加
+* 予測ロジックの初版実装
 
 ---
 
@@ -59,8 +61,8 @@ Status の意味:
 | M3 | seed データ整備 | DOING | 主要ユースケースを再現できる seed がある | 初版 SQL seed を投入済み。simulation API と account/transaction API からは参照可能 |
 | M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。予測系と詳細イベント拡張が未実施 |
 | M5 | 予測ロジック実装 | TODO | DailySpendForecast と CardPaymentForecast が動く | 実績優先ルール必須 |
-| M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions を実装済み |
-| M7 | 最小UI 実装 | TODO | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | グラフ含む |
+| M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions、scheduled-events、card-payments、balance-events を実装済み |
+| M7 | 最小UI 実装 | DOING | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | ダッシュボードに DB overview を追加済み。入力 UI は未実装 |
 | M8 | シナリオ比較 | TODO | イベントON/OFFと比較ができる | MVP終盤でよい |
 | M9 | 移行導線の初版 | TODO | 直近3〜6か月を投入できる | CSVまたは手入力補助 |
 | M10 | 受け入れ確認 | TODO | AC の主要項目をテストまたは手順で確認できる | 重点は AC-01〜08, 16〜19, 21 |
@@ -88,7 +90,7 @@ Status の意味:
 | T15 | 日常支出予測生成 | TODO | T09 | 実績欠損日に予測適用できる |
 | T16 | 実績優先ルール実装 | TODO | T14,T15 | 実績がある日には予測を抑制できる |
 | T17 | シミュレーション API | DONE | T12,T14,T15,T16 | 期間指定で結果を返せる |
-| T18 | CRUD API | DOING | T06,T07,T08 | accounts / transactions は実装済み |
+| T18 | CRUD API | DOING | T06,T07,T08 | accounts / transactions / scheduled-events / card-payments / balance-events を実装済み |
 | T19 | ダッシュボード画面 | TODO | T17 | 残高サマリが見える |
 | T20 | 取引入力画面 | TODO | T18 | Transaction 登録できる |
 | T21 | 予定入力画面 | TODO | T18 | ScheduledEvent 登録できる |
@@ -146,7 +148,7 @@ Status の意味:
 
 次の実装着手はこの順がよい。
 
-1. `scheduled_events` / `card_payments` / `balance_events` API を作る
-2. T10-T16 `シミュレーション / 予測` を実データ対応で広げる
-3. 画面から accounts / transactions を編集できる UI を作る
-4. 予測ロジックの初版に着手する
+1. T10-T16 `シミュレーション / 予測` を実データ対応で広げる
+2. 画面から accounts / transactions / scheduled events を編集できる UI を作る
+3. 予測ロジックの初版に着手する
+4. シナリオ比較の土台となる ON/OFF 設計を入れる

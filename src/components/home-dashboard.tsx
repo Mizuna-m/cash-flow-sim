@@ -1,3 +1,4 @@
+import { DataOverview } from "@/src/components/data-overview";
 import { SimulationPreview } from "@/src/components/simulation-preview";
 
 const milestones = [
@@ -87,6 +88,8 @@ export async function HomeDashboard() {
           </article>
         ))}
       </section>
+
+      <DataOverview />
 
       <SimulationPreview />
     </main>
