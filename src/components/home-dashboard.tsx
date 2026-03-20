@@ -1,4 +1,5 @@
 import { DataOverview } from "@/src/components/data-overview";
+import { QuickEntrySection } from "@/src/components/quick-entry-section";
 import { SimulationPreview } from "@/src/components/simulation-preview";
 
 const milestones = [
@@ -90,6 +91,8 @@ export async function HomeDashboard() {
       </section>
 
       <DataOverview />
+
+      <QuickEntrySection />
 
       <SimulationPreview />
     </main>

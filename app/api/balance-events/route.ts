@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { postgresUuidSchema } from "@/src/lib/validation";
 import {
   createBalanceEvent,
   listBalanceEvents
@@ -7,8 +8,8 @@ import {
 
 const balanceEventInputSchema = z.object({
   date: z.string().min(1),
-  fromAccountId: z.string().uuid().nullable().optional(),
-  toAccountId: z.string().uuid().nullable().optional(),
+  fromAccountId: postgresUuidSchema.nullable().optional(),
+  toAccountId: postgresUuidSchema.nullable().optional(),
   amount: z.union([z.string(), z.number()]).transform((value) => String(value)),
   memo: z.string().default(""),
   orderIndex: z.number().int().nonnegative().default(0)

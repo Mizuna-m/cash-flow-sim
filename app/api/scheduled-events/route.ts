@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { postgresUuidSchema } from "@/src/lib/validation";
 import {
   createScheduledEvent,
   listScheduledEvents
@@ -12,7 +13,7 @@ const scheduledEventInputSchema = z.object({
   recurrenceRule: z.string().nullable().optional(),
   amount: z.union([z.string(), z.number()]).transform((value) => String(value)),
   tags: z.record(z.string(), z.unknown()).default({}),
-  cardId: z.string().uuid().nullable().optional(),
+  cardId: postgresUuidSchema.nullable().optional(),
   isActive: z.boolean().default(true),
   orderIndex: z.number().int().nonnegative().default(0)
 });

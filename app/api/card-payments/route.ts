@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { postgresUuidSchema } from "@/src/lib/validation";
 import {
   createCardPayment,
   listCardPayments
 } from "@/src/infrastructure/repositories/card-payment-repository";
 
 const cardPaymentInputSchema = z.object({
-  creditCardId: z.string().uuid(),
-  sourceAccountId: z.string().uuid().nullable().optional(),
+  creditCardId: postgresUuidSchema,
+  sourceAccountId: postgresUuidSchema.nullable().optional(),
   date: z.string().min(1),
   amount: z.union([z.string(), z.number()]).transform((value) => String(value)),
   memo: z.string().default(""),

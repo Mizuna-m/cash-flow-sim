@@ -42,12 +42,15 @@ Status の意味:
 * `api/accounts` と `api/transactions` の GET / POST を追加済み
 * `api/scheduled-events` / `api/card-payments` / `api/balance-events` の GET / POST を追加済み
 * ホーム画面で accounts / transactions / scheduled events を DB から表示できる
+* ホーム画面に accounts / transactions / scheduled events の quick entry フォームを追加済み
+* transaction の POST を実行し、DB 保存と API 再取得を確認済み
+* card payment / balance event の POST を実行し、DB 保存と API 再取得を確認済み
 
 次に着手するべきこと:
 
 * シミュレーションロジックの対応イベント拡張
-* 画面から DB データを編集する UI の追加
 * 予測ロジックの初版実装
+* 入力後の一覧反映や簡易フィードバックの磨き込み
 
 ---
 
@@ -62,7 +65,7 @@ Status の意味:
 | M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。予測系と詳細イベント拡張が未実施 |
 | M5 | 予測ロジック実装 | TODO | DailySpendForecast と CardPaymentForecast が動く | 実績優先ルール必須 |
 | M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions、scheduled-events、card-payments、balance-events を実装済み |
-| M7 | 最小UI 実装 | DOING | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | ダッシュボードに DB overview を追加済み。入力 UI は未実装 |
+| M7 | 最小UI 実装 | DOING | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | ダッシュボードに DB overview と主要イベントの quick entry を追加済み。入力後の磨き込みは未実装 |
 | M8 | シナリオ比較 | TODO | イベントON/OFFと比較ができる | MVP終盤でよい |
 | M9 | 移行導線の初版 | TODO | 直近3〜6か月を投入できる | CSVまたは手入力補助 |
 | M10 | 受け入れ確認 | TODO | AC の主要項目をテストまたは手順で確認できる | 重点は AC-01〜08, 16〜19, 21 |
@@ -149,6 +152,6 @@ Status の意味:
 次の実装着手はこの順がよい。
 
 1. T10-T16 `シミュレーション / 予測` を実データ対応で広げる
-2. 画面から accounts / transactions / scheduled events を編集できる UI を作る
-3. 予測ロジックの初版に着手する
+2. 予測ロジックの初版に着手する
+3. 入力後の一覧反映や簡易フィードバックを磨く
 4. シナリオ比較の土台となる ON/OFF 設計を入れる
