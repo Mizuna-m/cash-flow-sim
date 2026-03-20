@@ -36,7 +36,16 @@ async function loadDashboardPayload(
     snapshots: [],
     source: "demo" as const,
     startDate,
-    endDate
+    endDate,
+    forecastSummary: {
+      actualsThroughDate: null,
+      firstForecastDate: null,
+      forecastDays: 0,
+      dailySpendForecastCount: 0,
+      dailySpendForecastAverageAmount: "0.00",
+      cardPaymentForecastCount: 0,
+      cardPaymentForecastTotalAmount: "0.00"
+    }
   }));
 
   return {

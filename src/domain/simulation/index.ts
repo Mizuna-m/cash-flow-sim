@@ -1,5 +1,6 @@
 import Decimal from "decimal.js";
 import {
+  type DailyEventSummary,
   type DailySimulationSnapshot,
   type SimulationEvent,
   type SimulationInput
@@ -93,6 +94,56 @@ function enumerateDates(startDate: string, endDate: string) {
   return dates;
 }
 
+function isForecastEvent(kind: SimulationEvent["kind"]) {
+  return kind === "daily-spend-forecast" || kind === "card-payment-forecast";
+}
+
+function buildEmptySummary(): DailyEventSummary {
+  return {
+    totalCount: 0,
+    actualCount: 0,
+    forecastCount: 0,
+    actualAmount: "0.00",
+    forecastAmount: "0.00",
+    kinds: []
+  };
+}
+
+function summarizeEvents(events: SimulationEvent[]): DailyEventSummary {
+  if (events.length === 0) {
+    return buildEmptySummary();
+  }
+
+  let actualAmount = new Decimal(0);
+  let forecastAmount = new Decimal(0);
+  let actualCount = 0;
+  let forecastCount = 0;
+  const kinds = new Set<SimulationEvent["kind"]>();
+
+  for (const event of events) {
+    const amount = new Decimal(event.amount);
+    kinds.add(event.kind);
+
+    if (isForecastEvent(event.kind)) {
+      forecastCount += 1;
+      forecastAmount = forecastAmount.plus(amount);
+      continue;
+    }
+
+    actualCount += 1;
+    actualAmount = actualAmount.plus(amount);
+  }
+
+  return {
+    totalCount: events.length,
+    actualCount,
+    forecastCount,
+    actualAmount: actualAmount.toFixed(2),
+    forecastAmount: forecastAmount.toFixed(2),
+    kinds: [...kinds].sort(),
+  };
+}
+
 export function simulateRange(input: SimulationInput): DailySimulationSnapshot[] {
   const threshold = new Decimal(input.threshold);
   let theoreticalBalance = new Decimal(input.initialTheoreticalBalance);
@@ -126,7 +177,8 @@ export function simulateRange(input: SimulationInput): DailySimulationSnapshot[]
       theoreticalBalance: theoreticalBalance.toFixed(2),
       actualBalance: actualBalance.toFixed(2),
       short: actualBalance.lessThan(threshold),
-      cardBalances: formatCardBalances(cardBalances)
+      cardBalances: formatCardBalances(cardBalances),
+      eventSummary: summarizeEvents(events)
     };
   });
 }

@@ -260,6 +260,10 @@ a {
   background: #2f7256;
 }
 
+.cash-legend .forecast::before {
+  background: #c69214;
+}
+
 .cash-legend .risk::before {
   background: #b84b3d;
 }
@@ -370,12 +374,68 @@ a {
   color: #0d6efd;
 }
 
+.cash-badge-forecast {
+  background: #f8edd0;
+  color: #8a6310;
+}
+
+.cash-badge-risk {
+  background: #f8e7e3;
+  color: #b84b3d;
+}
+
+.cash-badge-safe {
+  background: #e6f1eb;
+  color: #2f7256;
+}
+
 .cash-side-stack,
 .cash-list,
 .cash-table,
 .cash-form-shell {
   display: grid;
   gap: 10px;
+}
+
+.cash-forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.cash-forecast-card,
+.cash-snapshot-card {
+  border: 1px solid #d8d0c1;
+  border-radius: 16px;
+  background: #fffdfa;
+}
+
+.cash-forecast-card {
+  padding: 12px 13px;
+}
+
+.cash-snapshot-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.cash-snapshot-card {
+  padding: 13px 14px;
+}
+
+.cash-snapshot-badges,
+.cash-snapshot-metrics {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cash-snapshot-metrics {
+  margin-top: 10px;
+  color: #66717b;
+  font-size: 12px;
 }
 
 .cash-queue-item,
@@ -511,6 +571,10 @@ a {
   .cash-sim-grid {
     grid-template-columns: 1fr;
   }
+
+  .cash-forecast-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -520,6 +584,7 @@ a {
   }
 
   .cash-status-grid,
+  .cash-forecast-grid,
   .cash-input-grid,
   .cash-table-header,
   .cash-table-row {

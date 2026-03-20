@@ -15,12 +15,22 @@ export type SimulationEvent = {
   cardId?: string | null;
 };
 
+export type DailyEventSummary = {
+  totalCount: number;
+  actualCount: number;
+  forecastCount: number;
+  actualAmount: string;
+  forecastAmount: string;
+  kinds: SimulationEventKind[];
+};
+
 export type DailySimulationSnapshot = {
   date: string;
   theoreticalBalance: string;
   actualBalance: string;
   short: boolean;
   cardBalances: Record<string, string>;
+  eventSummary: DailyEventSummary;
 };
 
 export type SimulationInput = {

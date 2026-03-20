@@ -662,7 +662,7 @@ components:
 
     DailySimulationSnapshot:
       type: object
-      required: [date, theoreticalBalance, actualBalance, short, cardBalances]
+      required: [date, theoreticalBalance, actualBalance, short, cardBalances, eventSummary]
       properties:
         date:
           type: string
@@ -677,10 +677,44 @@ components:
           type: object
           additionalProperties:
             type: string
+        eventSummary:
+          $ref: "#/components/schemas/DailyEventSummary"
+
+    DailyEventSummary:
+      type: object
+      required:
+        [totalCount, actualCount, forecastCount, actualAmount, forecastAmount, kinds]
+      properties:
+        totalCount:
+          type: integer
+          minimum: 0
+        actualCount:
+          type: integer
+          minimum: 0
+        forecastCount:
+          type: integer
+          minimum: 0
+        actualAmount:
+          type: string
+        forecastAmount:
+          type: string
+        kinds:
+          type: array
+          items:
+            type: string
+            enum:
+              [
+                transaction,
+                balance-event,
+                scheduled-event,
+                daily-spend-forecast,
+                card-payment,
+                card-payment-forecast
+              ]
 
     SimulationResponse:
       type: object
-      required: [snapshots, source, startDate, endDate]
+      required: [snapshots, source, startDate, endDate, forecastSummary]
       properties:
         snapshots:
           type: array
@@ -695,6 +729,45 @@ components:
         endDate:
           type: string
           format: date
+        forecastSummary:
+          $ref: "#/components/schemas/ForecastSummary"
+
+    ForecastSummary:
+      type: object
+      required:
+        [
+          actualsThroughDate,
+          firstForecastDate,
+          forecastDays,
+          dailySpendForecastCount,
+          dailySpendForecastAverageAmount,
+          cardPaymentForecastCount,
+          cardPaymentForecastTotalAmount
+        ]
+      properties:
+        actualsThroughDate:
+          anyOf:
+            - type: string
+              format: date
+            - type: "null"
+        firstForecastDate:
+          anyOf:
+            - type: string
+              format: date
+            - type: "null"
+        forecastDays:
+          type: integer
+          minimum: 0
+        dailySpendForecastCount:
+          type: integer
+          minimum: 0
+        dailySpendForecastAverageAmount:
+          type: string
+        cardPaymentForecastCount:
+          type: integer
+          minimum: 0
+        cardPaymentForecastTotalAmount:
+          type: string
 
     UuidLike:
       type: string

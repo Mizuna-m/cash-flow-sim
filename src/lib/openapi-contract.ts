@@ -82,6 +82,21 @@ export type DailySimulationSnapshot = {
   actualBalance: string;
   short: boolean;
   cardBalances: Record<string, string>;
+  eventSummary: {
+    totalCount: number;
+    actualCount: number;
+    forecastCount: number;
+    actualAmount: string;
+    forecastAmount: string;
+    kinds: Array<
+      | "transaction"
+      | "balance-event"
+      | "scheduled-event"
+      | "daily-spend-forecast"
+      | "card-payment"
+      | "card-payment-forecast"
+    >;
+  };
 };
 
 export type SimulationResponse = {
@@ -89,6 +104,15 @@ export type SimulationResponse = {
   source: "database" | "demo";
   startDate: string;
   endDate: string;
+  forecastSummary: {
+    actualsThroughDate: string | null;
+    firstForecastDate: string | null;
+    forecastDays: number;
+    dailySpendForecastCount: number;
+    dailySpendForecastAverageAmount: string;
+    cardPaymentForecastCount: number;
+    cardPaymentForecastTotalAmount: string;
+  };
 };
 
 export type DashboardPayload = {

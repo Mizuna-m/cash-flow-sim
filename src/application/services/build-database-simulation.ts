@@ -11,6 +11,15 @@ export type BuiltSimulation = {
   source: "database" | "demo";
   startDate: string;
   endDate: string;
+  forecastSummary: {
+    actualsThroughDate: string | null;
+    firstForecastDate: string | null;
+    forecastDays: number;
+    dailySpendForecastCount: number;
+    dailySpendForecastAverageAmount: string;
+    cardPaymentForecastCount: number;
+    cardPaymentForecastTotalAmount: string;
+  };
 };
 
 function sumInitialBalances(
@@ -74,6 +83,40 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
   return events;
 }
 
+function buildForecastSummary(input: {
+  transactions: Awaited<ReturnType<typeof loadSimulationSeedData>>["transactions"];
+  dailySpendForecastEvents: SimulationEvent[];
+  cardPaymentForecastEvents: SimulationEvent[];
+}) {
+  const actualsThroughDate =
+    [...input.transactions.map((transaction) => transaction.date)].sort().at(-1) ?? null;
+  const forecastDates = [
+    ...input.dailySpendForecastEvents.map((event) => event.date),
+    ...input.cardPaymentForecastEvents.map((event) => event.date)
+  ].sort();
+  const dailySpendTotal = input.dailySpendForecastEvents.reduce(
+    (sum, event) => sum.plus(new Decimal(event.amount).abs()),
+    new Decimal(0)
+  );
+  const cardPaymentTotal = input.cardPaymentForecastEvents.reduce(
+    (sum, event) => sum.plus(new Decimal(event.amount).abs()),
+    new Decimal(0)
+  );
+
+  return {
+    actualsThroughDate,
+    firstForecastDate: forecastDates[0] ?? null,
+    forecastDays: new Set(forecastDates).size,
+    dailySpendForecastCount: input.dailySpendForecastEvents.length,
+    dailySpendForecastAverageAmount:
+      input.dailySpendForecastEvents.length === 0
+        ? "0.00"
+        : dailySpendTotal.div(input.dailySpendForecastEvents.length).toFixed(2),
+    cardPaymentForecastCount: input.cardPaymentForecastEvents.length,
+    cardPaymentForecastTotalAmount: cardPaymentTotal.toFixed(2)
+  };
+}
+
 export async function buildDatabaseSimulation(
   startDate = "2026-03-01",
   endDate = "2026-03-31"
@@ -131,6 +174,11 @@ export async function buildDatabaseSimulation(
     snapshots,
     source: "database",
     startDate,
-    endDate
+    endDate,
+    forecastSummary: buildForecastSummary({
+      transactions: data.transactions,
+      dailySpendForecastEvents,
+      cardPaymentForecastEvents
+    })
   };
 }

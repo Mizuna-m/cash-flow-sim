@@ -14,7 +14,16 @@ export async function SimulationPreview() {
     snapshots: buildDemoSimulation(),
     source: "demo" as const,
     startDate: "2026-03-01",
-    endDate: "2026-03-06"
+    endDate: "2026-03-06",
+    forecastSummary: {
+      actualsThroughDate: "2026-03-03",
+      firstForecastDate: "2026-03-05",
+      forecastDays: 2,
+      dailySpendForecastCount: 1,
+      dailySpendForecastAverageAmount: "40.00",
+      cardPaymentForecastCount: 1,
+      cardPaymentForecastTotalAmount: "380.00"
+    }
   }));
   const { snapshots, source, startDate, endDate } = simulation;
   const shortDays = snapshots.filter((snapshot) => snapshot.short).length;

@@ -57,6 +57,17 @@ type LedgerItem = {
   actionHint: string;
 };
 
+type SimulationHighlight = {
+  id: string;
+  date: string;
+  title: string;
+  detail: string;
+  theoreticalBalance: string;
+  actualBalance: string;
+  short: boolean;
+  forecastCount: number;
+};
+
 const composerTabs: Array<{
   id: ComposerTab;
   label: string;
@@ -188,8 +199,11 @@ function getProjectionSummary(simulation: SimulationResponse) {
   const latest = simulation.snapshots.at(-1) ?? null;
   const lowest = getLowestSnapshot(simulation.snapshots);
   const shortCount = simulation.snapshots.filter((snapshot) => snapshot.short).length;
+  const forecastCount = simulation.snapshots.filter(
+    (snapshot) => snapshot.eventSummary.forecastCount > 0
+  ).length;
 
-  return { latest, lowest, shortCount };
+  return { latest, lowest, shortCount, forecastCount };
 }
 
 function getNegativeScheduledEvents(events: ScheduledEvent[]) {
@@ -221,7 +235,12 @@ function buildRiskQueue(
       id: `lowest-${projection.lowest.date}`,
       tone: projection.shortCount > 0 ? "risk" : "safe",
       title: `${projection.lowest.date} 最低残高`,
-      detail: projection.shortCount > 0 ? "ショート判定の中心日" : "現状で一番低い現実残高",
+      detail:
+        projection.lowest.eventSummary.forecastCount > 0
+          ? "forecast を含む最低残高日"
+          : projection.shortCount > 0
+            ? "ショート判定の中心日"
+            : "現状で一番低い現実残高",
       amount: projection.lowest.actualBalance
     });
   }
@@ -353,6 +372,73 @@ function buildChartData(snapshots: DailySimulationSnapshot[]) {
   }));
 }
 
+function buildForecastSummaryItems(simulation: SimulationResponse) {
+  return [
+    {
+      label: "実績反映最終日",
+      value: simulation.forecastSummary.actualsThroughDate
+        ? formatShortDate(simulation.forecastSummary.actualsThroughDate)
+        : "-"
+    },
+    {
+      label: "予測開始日",
+      value: simulation.forecastSummary.firstForecastDate
+        ? formatShortDate(simulation.forecastSummary.firstForecastDate)
+        : "-"
+    },
+    {
+      label: "予測日数",
+      value: `${simulation.forecastSummary.forecastDays}日`
+    },
+    {
+      label: "日常支出予測",
+      value:
+        simulation.forecastSummary.dailySpendForecastCount > 0
+          ? `${simulation.forecastSummary.dailySpendForecastCount}件 / ${formatCurrency(
+              simulation.forecastSummary.dailySpendForecastAverageAmount
+            )}`
+          : "なし"
+    },
+    {
+      label: "カード引落予測",
+      value:
+        simulation.forecastSummary.cardPaymentForecastCount > 0
+          ? `${simulation.forecastSummary.cardPaymentForecastCount}件 / ${formatCurrency(
+              simulation.forecastSummary.cardPaymentForecastTotalAmount
+            )}`
+          : "なし"
+    }
+  ];
+}
+
+function buildSimulationHighlights(simulation: SimulationResponse): SimulationHighlight[] {
+  const flagged = simulation.snapshots.filter(
+    (snapshot) => snapshot.short || snapshot.eventSummary.forecastCount > 0
+  );
+  const base =
+    flagged.length > 0
+      ? flagged
+      : simulation.snapshots.filter((snapshot) => snapshot.eventSummary.actualCount > 0);
+
+  return base.slice(0, 8).map((snapshot) => ({
+    id: snapshot.date,
+    date: snapshot.date,
+    title: snapshot.short
+      ? "危険化した日"
+      : snapshot.eventSummary.forecastCount > 0
+        ? "予測が入った日"
+        : "実績の反映日",
+    detail:
+      snapshot.eventSummary.forecastCount > 0
+        ? `forecast ${snapshot.eventSummary.forecastCount}件 / 実績 ${snapshot.eventSummary.actualCount}件`
+        : `実績 ${snapshot.eventSummary.actualCount}件`,
+    theoreticalBalance: snapshot.theoreticalBalance,
+    actualBalance: snapshot.actualBalance,
+    short: snapshot.short,
+    forecastCount: snapshot.eventSummary.forecastCount
+  }));
+}
+
 export function CashflowWorkspaceClient({ initialData }: { initialData: DashboardPayload }) {
   const creditCards = initialData.creditCards;
   const [dashboard, setDashboard] = useState<DashboardState>({
@@ -420,6 +506,14 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
     () => buildChartData(dashboard.simulation.snapshots),
     [dashboard.simulation.snapshots]
   );
+  const forecastSummaryItems = useMemo(
+    () => buildForecastSummaryItems(dashboard.simulation),
+    [dashboard.simulation]
+  );
+  const simulationHighlights = useMemo(
+    () => buildSimulationHighlights(dashboard.simulation),
+    [dashboard.simulation]
+  );
 
   async function reload(range = dashboard.range) {
     setIsRefreshing(true);
@@ -435,7 +529,10 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
     }
   }
 
-  async function submitWithFeedback(action: (formData: FormData) => Promise<void>, formData: FormData) {
+  async function submitWithFeedback(
+    action: (formData: FormData) => Promise<void>,
+    formData: FormData
+  ) {
     setSubmissionState(emptySubmissionState);
 
     try {
@@ -445,11 +542,13 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
         tone: "success",
         message: "保存しました。シミュレーションと台帳を更新しています。"
       });
+      return true;
     } catch (error) {
       setSubmissionState({
         tone: "error",
         message: error instanceof Error ? error.message : "保存に失敗しました"
       });
+      return false;
     }
   }
 
@@ -562,9 +661,13 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
             meta={nextCardPayment ? formatShortDate(nextCardPayment.date) : "データなし"}
           />
           <StatusCard
-            label="比較候補"
-            value={`${mockScenarios.length}件`}
-            meta="Mock 表示"
+            label="予測日"
+            value={`${projection.forecastCount}日`}
+            meta={
+              dashboard.simulation.forecastSummary.firstForecastDate
+                ? `${formatShortDate(dashboard.simulation.forecastSummary.firstForecastDate)} から`
+                : "予測なし"
+            }
           />
         </div>
       </section>
@@ -605,6 +708,7 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
               <div className="cash-legend">
                 <span className="theoretical">理論残高</span>
                 <span className="actual">現実残高</span>
+                <span className="forecast">forecast 開始</span>
                 <span className="risk">危険日</span>
               </div>
 
@@ -651,6 +755,15 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
                             strokeDasharray="6 6"
                           />
                         ) : null}
+                        {dashboard.simulation.forecastSummary.firstForecastDate ? (
+                          <ReferenceLine
+                            x={formatShortDate(
+                              dashboard.simulation.forecastSummary.firstForecastDate
+                            )}
+                            stroke="#c69214"
+                            strokeDasharray="4 4"
+                          />
+                        ) : null}
                         <Line
                           type="monotone"
                           dataKey="theoretical"
@@ -686,6 +799,50 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
                   </>
                 )}
               </div>
+
+              <div className="cash-forecast-grid">
+                {forecastSummaryItems.map((item) => (
+                  <div key={item.label} className="cash-forecast-card">
+                    <div className="cash-status-label">{item.label}</div>
+                    <div className="cash-item-value">{item.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="cash-snapshot-list">
+                {simulationHighlights.length === 0 ? (
+                  <div className="cash-empty-box">変化のある日がまだありません</div>
+                ) : (
+                  simulationHighlights.map((item) => (
+                    <div key={item.id} className="cash-snapshot-card">
+                      <div className="cash-title-row">
+                        <div>
+                          <div className="cash-item-title">
+                            {formatShortDate(item.date)} {item.title}
+                          </div>
+                          <div className="cash-desc">{item.detail}</div>
+                        </div>
+                        <div className="cash-snapshot-badges">
+                          {item.forecastCount > 0 ? (
+                            <span className="cash-badge cash-badge-forecast">
+                              forecast {item.forecastCount}
+                            </span>
+                          ) : null}
+                          {item.short ? (
+                            <span className="cash-badge cash-badge-risk">危険</span>
+                          ) : (
+                            <span className="cash-badge cash-badge-safe">実績追従</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="cash-snapshot-metrics">
+                        <span>理論 {formatCurrency(item.theoreticalBalance)}</span>
+                        <span>現実 {formatCurrency(item.actualBalance)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
             <div className="cash-decision-card">
@@ -705,12 +862,24 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
                 }
               />
               <div className="cash-divider" />
-              <DecisionLine label="比較案" value="Mock" strong />
-              <DecisionLine label="シナリオ API" value="未実装" />
-              <DecisionLine label="差分再計算 API" value="未実装" />
+              <DecisionLine
+                label="実績最終日"
+                value={dashboard.simulation.forecastSummary.actualsThroughDate ?? "-"}
+                strong
+              />
+              <DecisionLine
+                label="予測開始"
+                value={dashboard.simulation.forecastSummary.firstForecastDate ?? "-"}
+              />
+              <DecisionLine
+                label="予測内訳"
+                value={`${dashboard.simulation.forecastSummary.dailySpendForecastCount} / ${dashboard.simulation.forecastSummary.cardPaymentForecastCount}`}
+              />
               <div className="cash-action-row">
-                <span className="cash-badge cash-badge-mock">Mock</span>
-                <span className="cash-inline-note">比較 UI は見た目のみ先行実装</span>
+                <span className="cash-badge cash-badge-forecast">Forecast</span>
+                <span className="cash-inline-note">
+                  左の縦線から先が予測寄りの期間です
+                </span>
               </div>
             </div>
           </div>
@@ -800,7 +969,7 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
           <div className="cash-form-shell">
             {composerTab === "scheduled" ? (
               <KeyboardForm
-                action={(formData) => void submitWithFeedback(handleScheduledSubmit, formData)}
+                action={(formData) => submitWithFeedback(handleScheduledSubmit, formData)}
               >
                 <div className="cash-input-grid">
                   <input
@@ -834,7 +1003,7 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
 
             {composerTab === "transaction" ? (
               <KeyboardForm
-                action={(formData) => void submitWithFeedback(handleTransactionSubmit, formData)}
+                action={(formData) => submitWithFeedback(handleTransactionSubmit, formData)}
               >
                 <div className="cash-input-grid">
                   <input
@@ -857,7 +1026,7 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
 
             {composerTab === "payment" ? (
               <KeyboardForm
-                action={(formData) => void submitWithFeedback(handleCardPaymentSubmit, formData)}
+                action={(formData) => submitWithFeedback(handleCardPaymentSubmit, formData)}
               >
                 <div className="cash-input-grid">
                   <select name="creditCardId" className="cash-input-card cash-input-focus" defaultValue={creditCards[0]?.id ?? ""} autoFocus>
@@ -891,7 +1060,7 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
 
             {composerTab === "balance" ? (
               <KeyboardForm
-                action={(formData) => void submitWithFeedback(handleBalanceSubmit, formData)}
+                action={(formData) => submitWithFeedback(handleBalanceSubmit, formData)}
               >
                 <div className="cash-input-grid">
                   <input
@@ -927,7 +1096,7 @@ export function CashflowWorkspaceClient({ initialData }: { initialData: Dashboar
 
             {composerTab === "account" ? (
               <KeyboardForm
-                action={(formData) => void submitWithFeedback(handleAccountSubmit, formData)}
+                action={(formData) => submitWithFeedback(handleAccountSubmit, formData)}
               >
                 <div className="cash-input-grid">
                   <input name="name" className="cash-input-card cash-input-focus" placeholder="口座名" autoFocus />
@@ -1065,14 +1234,26 @@ function DecisionLine({
 
 function KeyboardForm({
   action,
-  children
+  children,
+  resetOnSuccess = true
 }: {
-  action: (formData: FormData) => void;
+  action: (formData: FormData) => Promise<boolean>;
   children: React.ReactNode;
+  resetOnSuccess?: boolean;
 }) {
   return (
     <form
-      action={action}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const formData = new FormData(form);
+
+        void action(formData).then((shouldReset) => {
+          if (shouldReset && resetOnSuccess) {
+            form.reset();
+          }
+        });
+      }}
       onKeyDown={(event) => {
         if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
           event.preventDefault();
