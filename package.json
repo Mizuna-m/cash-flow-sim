@@ -14,11 +14,11 @@
     "db:setup": "node scripts/run-sql.mjs db/init/001_schema.sql db/init/002_seed.sql"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
     "@types/node": "^25.5.0",
     "@types/pg": "^8.15.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@tailwindcss/postcss": "^4.1.16",
     "autoprefixer": "^10.4.27",
     "decimal.js": "^10.6.0",
     "eslint": "^9.39.4",
@@ -28,6 +28,7 @@
     "postcss": "^8.5.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "recharts": "^3.8.0",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
