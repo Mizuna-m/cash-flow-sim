@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cash Flow Simulator UI Shell</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3f0e8;
+        --panel: #fffdf8;
+        --panel-2: #f8f4ec;
+        --ink: #14202b;
+        --muted: #617080;
+        --line: #d7d1c4;
+        --accent: #1e6fd9;
+        --accent-soft: #e8f1fe;
+        --danger: #c84f3d;
+        --danger-soft: #fbe8e3;
+        --safe: #327a5a;
+        --safe-soft: #e7f4ee;
+        --shadow: 0 18px 48px rgba(20, 32, 43, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+      }
+
+      .page {
+        width: min(1500px, calc(100vw - 32px));
+        margin: 24px auto 40px;
+        display: grid;
+        gap: 20px;
+      }
+
+      .hero,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        padding: 28px;
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 24px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--panel-2);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 16px 0 0;
+        font-size: clamp(30px, 4vw, 52px);
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+      }
+
+      .lead {
+        max-width: 800px;
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.9;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px;
+        background: var(--panel-2);
+      }
+
+      .metric .label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .metric .value {
+        margin-top: 10px;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .metric .note {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .danger-callout {
+        margin-top: 12px;
+        border-radius: 18px;
+        padding: 16px 18px;
+        background: var(--danger-soft);
+        color: #7f2c1f;
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+        gap: 20px;
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .panel-kicker {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .panel-title {
+        margin: 8px 0 0;
+        font-size: 28px;
+        line-height: 1.2;
+        letter-spacing: -0.03em;
+      }
+
+      .panel-copy {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .chip,
+      .button,
+      .field {
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+        min-height: 42px;
+        padding: 0 16px;
+        display: inline-flex;
+        align-items: center;
+        color: var(--ink);
+        font-size: 14px;
+      }
+
+      .button {
+        background: var(--ink);
+        color: white;
+        border-color: var(--ink);
+        font-weight: 700;
+      }
+
+      .timeline-shell {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: linear-gradient(180deg, #fffefb, #f7f3eb);
+        padding: 18px;
+      }
+
+      .legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .legend span::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        display: inline-block;
+        margin-right: 8px;
+      }
+
+      .legend .theoretical::before {
+        background: #1e6fd9;
+      }
+
+      .legend .actual::before {
+        background: #327a5a;
+      }
+
+      .legend .risk::before {
+        background: #c84f3d;
+      }
+
+      .chart {
+        height: 320px;
+        border-radius: 18px;
+        border: 1px dashed #c9c1b2;
+        background:
+          linear-gradient(to top, rgba(20, 32, 43, 0.03) 1px, transparent 1px) 0 0 / 100% 20%,
+          linear-gradient(to right, rgba(20, 32, 43, 0.025) 1px, transparent 1px) 0 0 / 10% 100%,
+          linear-gradient(180deg, rgba(30, 111, 217, 0.05), rgba(255, 255, 255, 0));
+        position: relative;
+        overflow: hidden;
+      }
+
+      .chart svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .risk-marker {
+        position: absolute;
+        top: 18px;
+        right: 18%;
+        width: 140px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 253, 248, 0.96);
+        border: 1px solid #e6b4aa;
+        color: #8e3424;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .under-chart {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 14px;
+      }
+
+      .mini h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+      }
+
+      .mini p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .stack {
+        display: grid;
+        gap: 20px;
+      }
+
+      .risk-list,
+      .event-list,
+      .ledger {
+        display: grid;
+        gap: 10px;
+      }
+
+      .risk-item,
+      .event-item,
+      .ledger-row {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel-2);
+        padding: 14px 16px;
+      }
+
+      .risk-item {
+        background: var(--danger-soft);
+      }
+
+      .event-item {
+        background: var(--accent-soft);
+      }
+
+      .row-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .row-title {
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .row-meta {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .row-value {
+        white-space: nowrap;
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .safe {
+        color: var(--safe);
+      }
+
+      .danger {
+        color: var(--danger);
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .subtle {
+        background: var(--panel);
+      }
+
+      .workspace-bottom {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        gap: 20px;
+      }
+
+      .form-shell {
+        display: grid;
+        gap: 14px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .tab {
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .tab.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: white;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .input {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        min-height: 54px;
+        padding: 14px 16px;
+        background: var(--panel-2);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .input.wide {
+        grid-column: 1 / -1;
+      }
+
+      .helper {
+        border-radius: 16px;
+        background: var(--safe-soft);
+        color: #275841;
+        padding: 14px 16px;
+        font-size: 13px;
+        line-height: 1.8;
+      }
+
+      .ledger-header {
+        display: grid;
+        grid-template-columns: 110px 1fr 160px 120px;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 0 4px 6px;
+      }
+
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 110px 1fr 160px 120px;
+        gap: 12px;
+        align-items: center;
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .layout,
+        .workspace-bottom {
+          grid-template-columns: 1fr;
+        }
+
+        .under-chart,
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          width: min(100vw - 20px, 1500px);
+          margin-top: 10px;
+        }
+
+        .hero,
+        .panel {
+          border-radius: 20px;
+          padding: 18px;
+        }
+
+        .summary-grid,
+        .ledger-header,
+        .ledger-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Practical Design First</div>
+          <h1>将来残高の判断を最優先にした、実務向けの操作面。</h1>
+          <p class="lead">
+            目的は、見栄えの良いダッシュボードではなく、いつ危ないか・何が原因か・何を足すとどう変わるかを短時間で判断できること。
+            このモックでは、シミュレーションを主役に置き、入力と履歴はその判断を支える位置に整理しています。
+          </p>
+        </div>
+
+        <div>
+          <div class="summary-grid">
+            <div class="metric">
+              <div class="label">最低現実残高</div>
+              <div class="value">¥44,740</div>
+              <div class="note">4月10日</div>
+            </div>
+            <div class="metric">
+              <div class="label">ショート日数</div>
+              <div class="value">0日</div>
+              <div class="note">現時点では安全</div>
+            </div>
+            <div class="metric">
+              <div class="label">次の重い支払い</div>
+              <div class="value">¥120,000</div>
+              <div class="note">旅行イベント</div>
+            </div>
+            <div class="metric">
+              <div class="label">カード引落</div>
+              <div class="value">¥66,040</div>
+              <div class="note">4月10日予定</div>
+            </div>
+          </div>
+          <div class="danger-callout">
+            判断メモ: 4月10日が底。旅行を有効化すると危険域に入る想定。まずはその前後のイベント差分と引落内訳を確認する。
+          </div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-kicker">Main Decision Area</div>
+              <h2 class="panel-title">シミュレーションと差分比較</h2>
+              <p class="panel-copy">
+                実績・予定・カード引落を時間軸に重ねて、最低残高と危険日を先に見る。
+                ここを見れば「いま意思決定できる」状態を目指す。
+              </p>
+            </div>
+
+            <div class="toolbar">
+              <div class="field">2026-03-01</div>
+              <div class="field">2026-04-30</div>
+              <div class="button">期間更新</div>
+            </div>
+          </div>
+
+          <div class="timeline-shell">
+            <div class="legend">
+              <span class="theoretical">理論残高</span>
+              <span class="actual">現実残高</span>
+              <span class="risk">危険イベント</span>
+            </div>
+
+            <div class="chart">
+              <svg viewBox="0 0 1000 320" preserveAspectRatio="none" aria-hidden="true">
+                <polyline
+                  fill="none"
+                  stroke="#1e6fd9"
+                  stroke-width="4"
+                  points="0,80 120,82 220,110 340,120 430,128 520,142 620,154 730,180 820,210 920,236 1000,250"
+                />
+                <polyline
+                  fill="none"
+                  stroke="#327a5a"
+                  stroke-width="4"
+                  points="0,72 120,72 220,72 340,72 430,72 520,72 620,74 730,120 820,190 920,210 1000,214"
+                />
+                <line x1="820" y1="0" x2="820" y2="320" stroke="#c84f3d" stroke-width="2" stroke-dasharray="6 6" />
+                <circle cx="820" cy="190" r="7" fill="#c84f3d" />
+              </svg>
+
+              <div class="risk-marker">
+                4/10 が最低残高
+                <br />
+                カード引落 + 旅行イベントが重なる想定
+              </div>
+            </div>
+
+            <div class="under-chart">
+              <div class="mini">
+                <h3>ベース案</h3>
+                <p>現在の予定のみ。ショートなし。最低残高は 4/10。</p>
+              </div>
+              <div class="mini">
+                <h3>旅行を追加</h3>
+                <p>4/12 付近で閾値を割る可能性。差分は -¥120,000。</p>
+              </div>
+              <div class="mini">
+                <h3>給料後に後ろ倒し</h3>
+                <p>4/25 実行なら安全域に戻る。これを比較の主導線にする。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="stack">
+          <section class="panel">
+            <div class="panel-kicker">Risk Queue</div>
+            <h2 class="panel-title">先に見るべき危険点</h2>
+            <div class="risk-list">
+              <div class="risk-item">
+                <div class="row-top">
+                  <div>
+                    <div class="row-title">4/10 カード引落</div>
+                    <div class="row-meta">現実残高の底。資金ショート判定の中心日</div>
+                  </div>
+                  <div class="row-value danger">¥66,040</div>
+                </div>
+              </div>
+              <div class="risk-item">
+                <div class="row-top">
+                  <div>
+                    <div class="row-title">4/12 旅行イベント</div>
+                    <div class="row-meta">有効化すると危険域に近づく候補</div>
+                  </div>
+                  <div class="row-value danger">¥120,000</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-kicker">Scenario Shortcuts</div>
+            <h2 class="panel-title">すぐ試す差分</h2>
+            <div class="event-list">
+              <div class="event-item">
+                <div class="row-top">
+                  <div>
+                    <div class="row-title">旅行をONにする</div>
+                    <div class="row-meta">影響を見るための比較シナリオ</div>
+                  </div>
+                  <div class="row-value">-¥120,000</div>
+                </div>
+                <div class="actions">
+                  <div class="button">比較に追加</div>
+                  <div class="chip subtle">予定を編集</div>
+                </div>
+              </div>
+              <div class="event-item">
+                <div class="row-top">
+                  <div>
+                    <div class="row-title">旅行を給料後へ移動</div>
+                    <div class="row-meta">安全側への代替案</div>
+                  </div>
+                  <div class="row-value safe">ショート回避</div>
+                </div>
+                <div class="actions">
+                  <div class="button">比較に追加</div>
+                  <div class="chip subtle">日付を編集</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="workspace-bottom">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-kicker">Input Workspace</div>
+              <h2 class="panel-title">文脈別の入力エリア</h2>
+              <p class="panel-copy">
+                全部入りフォームではなく、いま何を追加したいかに応じて箱を切り替える。右側の履歴と上部のシミュレーションにすぐ反映される前提。
+              </p>
+            </div>
+          </div>
+
+          <div class="form-shell">
+            <div class="tabs">
+              <div class="tab active">イベント追加</div>
+              <div class="tab">実績入力</div>
+              <div class="tab">カード引落</div>
+              <div class="tab">資金移動</div>
+            </div>
+
+            <div class="form-grid">
+              <div class="input">イベント名: 旅行 / 大型支出</div>
+              <div class="input">金額: -120000</div>
+              <div class="input">開始日: 2026-04-12</div>
+              <div class="input">Project: trip-kyoto</div>
+              <div class="input wide">メモ: この支出を入れたときの最低残高差分を確認したい</div>
+            </div>
+
+            <div class="helper">
+              保存すると、上の比較レーンに「ベース案 vs このイベントあり」を追加するイメージ。フォーム自体より、反映後の判断面を優先する。
+            </div>
+
+            <div class="actions">
+              <div class="button">比較シナリオとして保存</div>
+              <div class="chip subtle">通常の予定として保存</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-kicker">Operational Ledger</div>
+              <h2 class="panel-title">期間内の履歴と根拠</h2>
+              <p class="panel-copy">
+                単なる一覧ではなく、「何がこのシミュレーションを作っているか」を追える台帳。必要ならカテゴリや Project で掘る。
+              </p>
+            </div>
+            <div class="field">検索 / category / project</div>
+          </div>
+
+          <div class="ledger">
+            <div class="ledger-header">
+              <div>日付</div>
+              <div>内容</div>
+              <div>分類</div>
+              <div>金額</div>
+            </div>
+
+            <div class="ledger-row">
+              <div>4/10</div>
+              <div>
+                <div class="row-title">カード引落</div>
+                <div class="row-meta">メイン口座 / 実績</div>
+              </div>
+              <div>card payment</div>
+              <div class="row-value danger">¥66,040</div>
+            </div>
+
+            <div class="ledger-row">
+              <div>4/12</div>
+              <div>
+                <div class="row-title">旅行イベント</div>
+                <div class="row-meta">比較シナリオ候補</div>
+              </div>
+              <div>project: trip</div>
+              <div class="row-value danger">¥120,000</div>
+            </div>
+
+            <div class="ledger-row">
+              <div>4/25</div>
+              <div>
+                <div class="row-title">給与入金</div>
+                <div class="row-meta">実績 or 定期イベント</div>
+              </div>
+              <div>income</div>
+              <div class="row-value safe">¥280,000</div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

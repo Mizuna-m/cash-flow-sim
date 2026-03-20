@@ -1,7 +1,7 @@
-import { HomeDashboard } from "@/src/components/home-dashboard";
+import { CashflowWorkspace } from "@/src/components/cashflow-workspace";
 
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return <HomeDashboard />;
+  return <CashflowWorkspace />;
 }
