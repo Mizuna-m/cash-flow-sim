@@ -150,3 +150,52 @@ export async function createScheduledEvent(input: {
 
   return mapScheduledEvent(result.rows[0]);
 }
+
+export async function updateScheduledEvent(input: {
+  id: string;
+  isActive?: boolean;
+}) {
+  const updates: string[] = [];
+  const params: Array<string | boolean> = [];
+
+  if (typeof input.isActive === "boolean") {
+    params.push(input.isActive);
+    updates.push(`is_active = $${params.length}`);
+  }
+
+  if (updates.length === 0) {
+    throw new Error("No fields to update");
+  }
+
+  params.push(input.id);
+
+  const result = await dbPool.query<ScheduledEventRow>(
+    `
+      UPDATE scheduled_events
+      SET
+        ${updates.join(", ")},
+        updated_at = NOW()
+      WHERE id = $${params.length}::uuid
+      RETURNING
+        id,
+        name,
+        start_date::text,
+        end_date::text,
+        recurrence_rule,
+        amount::text,
+        tags,
+        card_id::text,
+        is_active,
+        order_index,
+        created_at::text,
+        updated_at::text
+    `,
+    params
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error("Scheduled event not found");
+  }
+
+  return mapScheduledEvent(result.rows[0]);
+}

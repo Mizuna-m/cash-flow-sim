@@ -13,6 +13,9 @@ export type SimulationEvent = {
   amount: string;
   orderIndex: number;
   cardId?: string | null;
+  source?: "actual" | "forecast";
+  label?: string;
+  detail?: string;
 };
 
 export type DailyEventSummary = {
@@ -24,6 +27,17 @@ export type DailyEventSummary = {
   kinds: SimulationEventKind[];
 };
 
+export type DailyEventExplanation = {
+  id: string;
+  kind: SimulationEventKind;
+  source: "actual" | "forecast";
+  label: string;
+  detail: string;
+  amount: string;
+  orderIndex: number;
+  cardId: string | null;
+};
+
 export type DailySimulationSnapshot = {
   date: string;
   theoreticalBalance: string;
@@ -31,6 +45,7 @@ export type DailySimulationSnapshot = {
   short: boolean;
   cardBalances: Record<string, string>;
   eventSummary: DailyEventSummary;
+  events: DailyEventExplanation[];
 };
 
 export type SimulationInput = {

@@ -1,24 +1,19 @@
 import { buildDatabaseSimulation } from "@/src/application/services/build-database-simulation";
-import { CashflowWorkspaceClient } from "@/src/components/cashflow-workspace-client";
 import { buildDefaultRange } from "@/src/lib/date-range";
 import type { DashboardPayload } from "@/src/lib/openapi-contract";
+import { appEnv } from "@/src/infrastructure/db/env";
 import { listAccounts } from "@/src/infrastructure/repositories/account-repository";
 import { listBalanceEvents } from "@/src/infrastructure/repositories/balance-event-repository";
 import { listCardPayments } from "@/src/infrastructure/repositories/card-payment-repository";
 import { listCreditCards } from "@/src/infrastructure/repositories/credit-card-repository";
 import { listScheduledEvents } from "@/src/infrastructure/repositories/scheduled-event-repository";
 import { listTransactions } from "@/src/infrastructure/repositories/transaction-repository";
-import { appEnv } from "@/src/infrastructure/db/env";
 
-export async function CashflowWorkspace() {
-  const { startDate, endDate } = buildDefaultRange(new Date("2026-03-21T00:00:00+09:00"));
-
-  const payload = await loadDashboardPayload(startDate, endDate);
-
-  return <CashflowWorkspaceClient initialData={payload} />;
+export function getDefaultRange() {
+  return buildDefaultRange(new Date("2026-03-21T00:00:00+09:00"));
 }
 
-async function loadDashboardPayload(
+export async function loadDashboardPayload(
   startDate: string,
   endDate: string
 ): Promise<DashboardPayload> {
@@ -58,7 +53,7 @@ async function loadDashboardPayload(
     simulation,
     health: {
       status: "ok",
-      baseCurrency: "JPY",
+      baseCurrency: appEnv.BASE_CURRENCY,
       defaultCardId: creditCards.find((card) => card.isDefault)?.id ?? appEnv.DEFAULT_CARD_ID
     }
   };

@@ -110,3 +110,29 @@ export async function createCardPayment(input: {
 
   return mapCardPayment(result.rows[0]);
 }
+
+export async function deleteCardPayment(id: string) {
+  const result = await dbPool.query<CardPaymentRow>(
+    `
+      DELETE FROM card_payments
+      WHERE id = $1::uuid
+      RETURNING
+        id,
+        credit_card_id::text,
+        source_account_id::text,
+        date::text,
+        amount::text,
+        memo,
+        order_index,
+        created_at::text,
+        updated_at::text
+    `,
+    [id]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error("Card payment not found");
+  }
+
+  return mapCardPayment(result.rows[0]);
+}

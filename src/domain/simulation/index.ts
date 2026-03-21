@@ -1,5 +1,6 @@
 import Decimal from "decimal.js";
 import {
+  type DailyEventExplanation,
   type DailyEventSummary,
   type DailySimulationSnapshot,
   type SimulationEvent,
@@ -144,6 +145,22 @@ function summarizeEvents(events: SimulationEvent[]): DailyEventSummary {
   };
 }
 
+function buildEventExplanations(
+  events: SimulationEvent[],
+  defaultCardId: string
+): DailyEventExplanation[] {
+  return events.map((event) => ({
+    id: event.id,
+    kind: event.kind,
+    source: event.source ?? (isForecastEvent(event.kind) ? "forecast" : "actual"),
+    label: event.label ?? event.kind,
+    detail: event.detail ?? "",
+    amount: new Decimal(event.amount).toFixed(2),
+    orderIndex: event.orderIndex,
+    cardId: event.cardId ?? defaultCardId
+  }));
+}
+
 export function simulateRange(input: SimulationInput): DailySimulationSnapshot[] {
   const threshold = new Decimal(input.threshold);
   let theoreticalBalance = new Decimal(input.initialTheoreticalBalance);
@@ -178,7 +195,8 @@ export function simulateRange(input: SimulationInput): DailySimulationSnapshot[]
       actualBalance: actualBalance.toFixed(2),
       short: actualBalance.lessThan(threshold),
       cardBalances: formatCardBalances(cardBalances),
-      eventSummary: summarizeEvents(events)
+      eventSummary: summarizeEvents(events),
+      events: buildEventExplanations(events, input.defaultCardId)
     };
   });
 }

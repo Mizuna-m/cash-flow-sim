@@ -21,6 +21,7 @@ tags:
   - name: BalanceEvents
   - name: CardPayments
   - name: Simulation
+  - name: SimulationComparison
 paths:
   /api/health:
     get:
@@ -130,6 +131,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /api/transactions/{id}:
+    delete:
+      tags: [Transactions]
+      summary: Delete transaction
+      operationId: deleteTransaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidLike"
+      responses:
+        "200":
+          description: Deleted transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [transaction]
+                properties:
+                  transaction:
+                    $ref: "#/components/schemas/Transaction"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/scheduled-events:
     get:
       tags: [ScheduledEvents]
@@ -170,6 +200,41 @@ paths:
       responses:
         "201":
           description: Created scheduled event
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [scheduledEvent]
+                properties:
+                  scheduledEvent:
+                    $ref: "#/components/schemas/ScheduledEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/scheduled-events/{id}:
+    patch:
+      tags: [ScheduledEvents]
+      summary: Update scheduled event
+      operationId: updateScheduledEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidLike"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledEventUpdateRequest"
+      responses:
+        "200":
+          description: Updated scheduled event
           content:
             application/json:
               schema:
@@ -234,6 +299,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /api/balance-events/{id}:
+    delete:
+      tags: [BalanceEvents]
+      summary: Delete balance event
+      operationId: deleteBalanceEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidLike"
+      responses:
+        "200":
+          description: Deleted balance event
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [balanceEvent]
+                properties:
+                  balanceEvent:
+                    $ref: "#/components/schemas/BalanceEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/card-payments:
     get:
       tags: [CardPayments]
@@ -276,6 +370,60 @@ paths:
                 properties:
                   cardPayment:
                     $ref: "#/components/schemas/CardPayment"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/card-payments/{id}:
+    delete:
+      tags: [CardPayments]
+      summary: Delete card payment
+      operationId: deleteCardPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidLike"
+      responses:
+        "200":
+          description: Deleted card payment
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cardPayment]
+                properties:
+                  cardPayment:
+                    $ref: "#/components/schemas/CardPayment"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/simulation/compare:
+    post:
+      tags: [SimulationComparison]
+      summary: Compare simulations by excluding event IDs
+      operationId: compareSimulations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulationComparisonRequest"
+      responses:
+        "200":
+          description: Simulation comparison result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationComparisonResponse"
         "400":
           description: Validation error
           content:
@@ -550,6 +698,12 @@ components:
           minimum: 0
           default: 0
 
+    ScheduledEventUpdateRequest:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+
     BalanceEvent:
       type: object
       required:
@@ -662,7 +816,8 @@ components:
 
     DailySimulationSnapshot:
       type: object
-      required: [date, theoreticalBalance, actualBalance, short, cardBalances, eventSummary]
+      required:
+        [date, theoreticalBalance, actualBalance, short, cardBalances, eventSummary, events]
       properties:
         date:
           type: string
@@ -679,6 +834,10 @@ components:
             type: string
         eventSummary:
           $ref: "#/components/schemas/DailyEventSummary"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyEventExplanation"
 
     DailyEventSummary:
       type: object
@@ -712,6 +871,40 @@ components:
                 card-payment-forecast
               ]
 
+    DailyEventExplanation:
+      type: object
+      required: [id, kind, source, label, detail, amount, orderIndex, cardId]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+            [
+              transaction,
+              balance-event,
+              scheduled-event,
+              daily-spend-forecast,
+              card-payment,
+              card-payment-forecast
+            ]
+        source:
+          type: string
+          enum: [actual, forecast]
+        label:
+          type: string
+        detail:
+          type: string
+        amount:
+          type: string
+        orderIndex:
+          type: integer
+          minimum: 0
+        cardId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+
     SimulationResponse:
       type: object
       required: [snapshots, source, startDate, endDate, forecastSummary]
@@ -731,6 +924,77 @@ components:
           format: date
         forecastSummary:
           $ref: "#/components/schemas/ForecastSummary"
+
+    SimulationComparisonRequest:
+      type: object
+      required: [startDate, endDate, scenarios]
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        scenarios:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimulationComparisonScenarioRequest"
+
+    SimulationComparisonScenarioRequest:
+      type: object
+      required: [id, label, excludedEventIds]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        detail:
+          type: string
+        excludedEventIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidLike"
+
+    SimulationComparisonResponse:
+      type: object
+      required: [base, scenarios]
+      properties:
+        base:
+          $ref: "#/components/schemas/SimulationResponse"
+        scenarios:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimulationComparisonScenarioResult"
+
+    SimulationComparisonScenarioResult:
+      type: object
+      required: [id, label, detail, excludedEventIds, simulation, diff]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        detail:
+          type: string
+        excludedEventIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidLike"
+        simulation:
+          $ref: "#/components/schemas/SimulationResponse"
+        diff:
+          $ref: "#/components/schemas/SimulationComparisonDiff"
+
+    SimulationComparisonDiff:
+      type: object
+      required: [shortCountDelta, lowestActualBalanceDelta, endingActualBalanceDelta]
+      properties:
+        shortCountDelta:
+          type: integer
+        lowestActualBalanceDelta:
+          type: string
+        endingActualBalanceDelta:
+          type: string
 
     ForecastSummary:
       type: object

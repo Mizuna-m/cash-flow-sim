@@ -110,3 +110,29 @@ export async function createTransaction(input: {
 
   return mapTransaction(result.rows[0]);
 }
+
+export async function deleteTransaction(id: string) {
+  const result = await dbPool.query<TransactionRow>(
+    `
+      DELETE FROM transactions
+      WHERE id = $1::uuid
+      RETURNING
+        id,
+        date::text,
+        amount::text,
+        tags,
+        card_id::text,
+        memo,
+        order_index,
+        created_at::text,
+        updated_at::text
+    `,
+    [id]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error("Transaction not found");
+  }
+
+  return mapTransaction(result.rows[0]);
+}

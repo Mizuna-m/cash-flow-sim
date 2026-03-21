@@ -22,6 +22,24 @@ export type BuiltSimulation = {
   };
 };
 
+export type BuildSimulationOptions = {
+  excludedEventIds?: string[];
+};
+
+function getTagText(tags: Record<string, unknown>, key: string) {
+  const values = tags[key];
+
+  if (!Array.isArray(values) || values.length === 0) {
+    return "";
+  }
+
+  return values.filter((value): value is string => typeof value === "string").join(", ");
+}
+
+function compactDetail(parts: Array<string | null | undefined>) {
+  return parts.map((part) => part?.trim()).filter(Boolean).join(" / ");
+}
+
 function sumInitialBalances(
   accounts: Awaited<ReturnType<typeof loadSimulationSeedData>>["accounts"]
 ) {
@@ -44,7 +62,14 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       kind: "transaction",
       amount: transaction.amount,
       orderIndex: transaction.order_index,
-      cardId: transaction.card_id
+      cardId: transaction.card_id,
+      source: "actual",
+      label: transaction.memo || "実績",
+      detail:
+        compactDetail([
+          getTagText(transaction.tags, "project"),
+          getTagText(transaction.tags, "category")
+        ]) || "transaction"
     });
   }
 
@@ -55,7 +80,15 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       kind: "scheduled-event",
       amount: scheduledEvent.amount,
       orderIndex: scheduledEvent.order_index,
-      cardId: scheduledEvent.card_id
+      cardId: scheduledEvent.card_id,
+      source: "actual",
+      label: scheduledEvent.name,
+      detail:
+        compactDetail([
+          scheduledEvent.recurrence_rule,
+          getTagText(scheduledEvent.tags, "project"),
+          getTagText(scheduledEvent.tags, "category")
+        ]) || "scheduled event"
     });
   }
 
@@ -65,7 +98,11 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       date: balanceEvent.date,
       kind: "balance-event",
       amount: balanceEvent.amount,
-      orderIndex: balanceEvent.order_index
+      orderIndex: balanceEvent.order_index,
+      source: "actual",
+      label: balanceEvent.memo || "資金移動",
+      detail:
+        `${balanceEvent.from_account_name ?? "外部"} -> ${balanceEvent.to_account_name ?? "外部"}`
     });
   }
 
@@ -76,7 +113,12 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       kind: "card-payment",
       amount: cardPayment.amount,
       orderIndex: cardPayment.order_index,
-      cardId: cardPayment.credit_card_id
+      cardId: cardPayment.credit_card_id,
+      source: "actual",
+      label: cardPayment.memo || "カード引落",
+      detail:
+        compactDetail([cardPayment.credit_card_name, cardPayment.source_account_name]) ||
+        "card payment"
     });
   }
 
@@ -119,9 +161,18 @@ function buildForecastSummary(input: {
 
 export async function buildDatabaseSimulation(
   startDate = "2026-03-01",
-  endDate = "2026-03-31"
+  endDate = "2026-03-31",
+  options?: BuildSimulationOptions
 ): Promise<BuiltSimulation> {
-  const data = await loadSimulationSeedData(startDate, endDate);
+  const excludedEventIds = new Set(options?.excludedEventIds ?? []);
+  const rawData = await loadSimulationSeedData(startDate, endDate);
+  const data = {
+    ...rawData,
+    transactions: rawData.transactions.filter((item) => !excludedEventIds.has(item.id)),
+    scheduledEvents: rawData.scheduledEvents.filter((item) => !excludedEventIds.has(item.id)),
+    balanceEvents: rawData.balanceEvents.filter((item) => !excludedEventIds.has(item.id)),
+    cardPayments: rawData.cardPayments.filter((item) => !excludedEventIds.has(item.id))
+  };
   const initialBalance = sumInitialBalances(data.accounts);
   const defaultCardId =
     data.creditCards.find((creditCard) => creditCard.is_default)?.id ?? appEnv.DEFAULT_CARD_ID;
@@ -158,7 +209,22 @@ export async function buildDatabaseSimulation(
       }))
     ],
     actualCardPayments: data.cardPayments
+  }).map((event) => {
+    const card = data.creditCards.find((creditCard) => creditCard.id === event.cardId);
+
+    return {
+      ...event,
+      source: "forecast" as const,
+      label: "カード引落予測",
+      detail: card ? `${card.name} / 締日ベース` : "card payment forecast"
+    };
   });
+  const decoratedDailySpendForecastEvents = dailySpendForecastEvents.map((event) => ({
+    ...event,
+    source: "forecast" as const,
+    label: "日常支出予測",
+    detail: "実績平均から生成"
+  }));
 
   const snapshots = simulateRange({
     startDate,
@@ -167,7 +233,7 @@ export async function buildDatabaseSimulation(
     defaultCardId,
     initialTheoreticalBalance: initialBalance.toFixed(2),
     initialActualBalance: initialBalance.toFixed(2),
-    events: [...baseEvents, ...dailySpendForecastEvents, ...cardPaymentForecastEvents]
+    events: [...baseEvents, ...decoratedDailySpendForecastEvents, ...cardPaymentForecastEvents]
   });
 
   return {
@@ -177,7 +243,7 @@ export async function buildDatabaseSimulation(
     endDate,
     forecastSummary: buildForecastSummary({
       transactions: data.transactions,
-      dailySpendForecastEvents,
+      dailySpendForecastEvents: decoratedDailySpendForecastEvents,
       cardPaymentForecastEvents
     })
   };

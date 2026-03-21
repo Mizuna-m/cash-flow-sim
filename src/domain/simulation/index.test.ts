@@ -72,6 +72,18 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
     forecastAmount: "0.00",
     kinds: ["transaction"]
   });
+  assert.deepEqual(snapshots[1]?.events, [
+    {
+      id: "groceries",
+      kind: "transaction",
+      source: "actual",
+      label: "transaction",
+      detail: "",
+      amount: "-80.00",
+      orderIndex: 1,
+      cardId: "default-card"
+    }
+  ]);
 
   assert.equal(snapshots[2]?.theoreticalBalance, "820.00");
   assert.equal(snapshots[2]?.actualBalance, "1200.00");
@@ -95,6 +107,18 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
     forecastAmount: "380.00",
     kinds: ["card-payment-forecast"]
   });
+  assert.deepEqual(snapshots[3]?.events, [
+    {
+      id: "card-payment",
+      kind: "card-payment-forecast",
+      source: "forecast",
+      label: "card-payment-forecast",
+      detail: "",
+      amount: "380.00",
+      orderIndex: 1,
+      cardId: "main-card"
+    }
+  ]);
 });
 
 test("simulateRange does not change aggregate actual balance for balance-event transfers", () => {
@@ -126,4 +150,5 @@ test("simulateRange does not change aggregate actual balance for balance-event t
     forecastAmount: "0.00",
     kinds: ["balance-event"]
   });
+  assert.equal(snapshots[0]?.events[0]?.kind, "balance-event");
 });

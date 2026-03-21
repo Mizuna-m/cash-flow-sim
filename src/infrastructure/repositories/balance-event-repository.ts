@@ -110,3 +110,29 @@ export async function createBalanceEvent(input: {
 
   return mapBalanceEvent(result.rows[0]);
 }
+
+export async function deleteBalanceEvent(id: string) {
+  const result = await dbPool.query<BalanceEventRow>(
+    `
+      DELETE FROM balance_events
+      WHERE id = $1::uuid
+      RETURNING
+        id,
+        date::text,
+        from_account_id::text,
+        to_account_id::text,
+        amount::text,
+        memo,
+        order_index,
+        created_at::text,
+        updated_at::text
+    `,
+    [id]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error("Balance event not found");
+  }
+
+  return mapBalanceEvent(result.rows[0]);
+}

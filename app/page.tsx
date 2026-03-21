@@ -1,7 +1,5 @@
-import { CashflowWorkspace } from "@/src/components/cashflow-workspace";
-
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return <CashflowWorkspace />;
+  redirect("/simulation");
 }

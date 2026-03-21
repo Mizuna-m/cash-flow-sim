@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cash Flow Simulator Wireframe v3</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f2eee7;
+        --paper: #fffdf9;
+        --line: #d7d0c4;
+        --line-strong: #bdb4a4;
+        --ink: #17212b;
+        --muted: #6d7780;
+        --accent: #376ed4;
+        --danger: #c65b4d;
+        --ok: #4f7d60;
+        --shadow: 0 16px 38px rgba(23, 33, 43, 0.07);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          "Hiragino Sans",
+          "Hiragino Kaku Gothic ProN",
+          "Yu Gothic",
+          "Meiryo",
+          sans-serif;
+      }
+
+      .page {
+        width: min(1560px, calc(100vw - 28px));
+        margin: 14px auto 36px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+      }
+
+      .top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: center;
+        padding: 18px 20px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 3.2vw, 40px);
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+      }
+
+      .sub {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .nav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .nav a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #f7f3ec;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .nav a.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: white;
+      }
+
+      .section {
+        padding: 18px 20px 20px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .section-title {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.03em;
+      }
+
+      .section-meta {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .filters,
+      .chips,
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .pill,
+      .button {
+        min-height: 38px;
+        padding: 0 14px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #f7f3ec;
+        font-size: 13px;
+      }
+
+      .button {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: white;
+        font-weight: 700;
+      }
+
+      .wire-box {
+        border: 1px dashed var(--line-strong);
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.7), rgba(247,243,236,0.75));
+      }
+
+      .label {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: #f0ece3;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .grid-hero {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .stat {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #f7f3ec;
+      }
+
+      .stat .k {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .stat .v {
+        margin-top: 8px;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .stat .m {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .sim-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.45fr) minmax(280px, 0.55fr);
+        gap: 14px;
+      }
+
+      .chart-box {
+        padding: 14px;
+      }
+
+      .chart-placeholder {
+        height: 260px;
+        margin-top: 10px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 16px;
+        position: relative;
+        background:
+          linear-gradient(to top, rgba(23, 33, 43, 0.04) 1px, transparent 1px) 0 0 / 100% 20%,
+          linear-gradient(to right, rgba(23, 33, 43, 0.03) 1px, transparent 1px) 0 0 / 10% 100%;
+      }
+
+      .chart-line {
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 260' preserveAspectRatio='none'%3E%3Cpolyline fill='none' stroke='%23376ed4' stroke-width='4' points='40,48 140,48 220,70 340,74 430,78 520,118 650,124 760,132 870,140 960,148'/%3E%3Cpolyline fill='none' stroke='%234f7d60' stroke-width='4' points='40,40 140,40 220,70 340,70 430,70 520,72 650,72 760,104 870,104 960,104'/%3E%3Cline x1='760' y1='0' x2='760' y2='260' stroke='%23c65b4d' stroke-width='2' stroke-dasharray='7 7'/%3E%3C/svg%3E")
+          center / 100% 100% no-repeat;
+      }
+
+      .callout {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 144px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid #e0b3ab;
+        background: rgba(255, 253, 249, 0.96);
+        color: #8c3f33;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .stack,
+      .list,
+      .table,
+      .form-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .summary-col,
+      .risk-col {
+        padding: 14px;
+      }
+
+      .summary-row,
+      .list-item,
+      .table-row,
+      .input-cell {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #f7f3ec;
+      }
+
+      .summary-row {
+        padding: 12px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .summary-row b,
+      .row-title {
+        font-size: 14px;
+      }
+
+      .row-note,
+      .row-sub,
+      .table-row small {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .list-item {
+        padding: 12px 14px;
+      }
+
+      .list-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .danger {
+        color: var(--danger);
+        font-weight: 800;
+      }
+
+      .ok {
+        color: var(--ok);
+        font-weight: 800;
+      }
+
+      .forecast-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 14px;
+      }
+
+      .table-header,
+      .table-row {
+        display: grid;
+        grid-template-columns: 90px 120px 1.2fr 120px 130px 120px;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .table-header {
+        padding: 0 6px 4px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .table-row {
+        padding: 12px 14px;
+      }
+
+      .right-sticky {
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+
+      .entry-layout {
+        display: grid;
+        grid-template-columns: 420px minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      .tab {
+        min-height: 36px;
+        padding: 0 12px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #f7f3ec;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .tab.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: white;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .input-cell {
+        min-height: 54px;
+        padding: 14px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .input-cell.wide {
+        grid-column: 1 / -1;
+      }
+
+      .kbd-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .kbd {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+
+      .page-card {
+        scroll-margin-top: 18px;
+      }
+
+      @media (max-width: 1220px) {
+        .top,
+        .sim-layout,
+        .forecast-layout,
+        .entry-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .page {
+          width: min(calc(100vw - 16px), 1560px);
+        }
+
+        .grid-hero,
+        .form-grid,
+        .table-header,
+        .table-row {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel top">
+        <div>
+          <h1>Cash Flow Simulator Wireframe</h1>
+          <div class="sub">
+            前提: データ量が大きいので、時系列一覧はカードより表を優先。MVP はシミュレーション・予測テーブル・入力・台帳に集中。
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#simulation" class="active">1. Simulation</a>
+          <a href="#forecast-table">2. Forecast Table</a>
+          <a href="#ledger-entry">3. Ledger & Entry</a>
+          <a href="#settings">4. Settings</a>
+        </nav>
+      </section>
+
+      <section id="simulation" class="panel section page-card">
+        <div class="section-head">
+          <div>
+            <div class="label">Page 1</div>
+            <h2 class="section-title">Simulation</h2>
+            <div class="section-meta">
+              最初に見る画面。危険日、最低残高、イベント影響、カード引落を判断するための面。
+            </div>
+          </div>
+          <div class="filters">
+            <div class="pill">期間 2026/03/01 - 2026/04/30</div>
+            <div class="pill">口座 ALL</div>
+            <div class="pill">Scenario Base</div>
+            <div class="button">再計算</div>
+          </div>
+        </div>
+
+        <div class="grid-hero">
+          <div class="stat">
+            <div class="k">最低残高</div>
+            <div class="v">¥444,033</div>
+            <div class="m">2026-04-10</div>
+          </div>
+          <div class="stat">
+            <div class="k">ショート</div>
+            <div class="v">0日</div>
+            <div class="m">現状判定</div>
+          </div>
+          <div class="stat">
+            <div class="k">次の引落</div>
+            <div class="v">¥48,000</div>
+            <div class="m">3/10</div>
+          </div>
+          <div class="stat">
+            <div class="k">予測日数</div>
+            <div class="v">40日</div>
+            <div class="m">3/22 から</div>
+          </div>
+        </div>
+
+        <div class="sim-layout">
+          <div class="wire-box chart-box">
+            <div class="label">Chart Area</div>
+            <div class="chart-placeholder">
+              <div class="chart-line"></div>
+              <div class="callout">4/10 最低残高<br />¥444,033</div>
+            </div>
+          </div>
+
+          <div class="wire-box summary-col">
+            <div class="label">Summary Rail</div>
+            <div class="stack" style="margin-top:10px;">
+              <div class="summary-row">
+                <b>ベース案</b>
+                <div class="row-note">最低残高 / 危険イベント / 予測開始日</div>
+              </div>
+              <div class="summary-row">
+                <b>比較案</b>
+                <div class="row-note">イベント ON/OFF の差分</div>
+              </div>
+              <div class="summary-row">
+                <b>カード引落</b>
+                <div class="row-note">締日・支払日・合計</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wire-box risk-col">
+            <div class="label">Risk Queue</div>
+            <div class="list" style="margin-top:10px;">
+              <div class="list-item">
+                <div class="list-top">
+                  <div class="row-title">2026-04-10 最低残高</div>
+                  <div class="ok">¥444,033</div>
+                </div>
+                <div class="row-sub">forecast を含む最終残高</div>
+              </div>
+              <div class="list-item">
+                <div class="list-top">
+                  <div class="row-title">2026-03-10 カード引落</div>
+                  <div class="danger">-¥48,000</div>
+                </div>
+                <div class="row-sub">Default Card</div>
+              </div>
+              <div class="list-item">
+                <div class="list-top">
+                  <div class="row-title">2026-03-27 Monthly Rent</div>
+                  <div class="danger">-¥85,000</div>
+                </div>
+                <div class="row-sub">予定イベント</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="forecast-table" class="panel section page-card">
+        <div class="section-head">
+          <div>
+            <div class="label">Page 2</div>
+            <h2 class="section-title">Forecast Table</h2>
+            <div class="section-meta">
+              予測と実績が混じる時系列を、日単位の表で確認する面。カードではなく表で連続して読む。
+            </div>
+          </div>
+          <div class="chips">
+            <div class="pill">表示: 日次</div>
+            <div class="pill">種別: ALL</div>
+            <div class="pill">危険日のみ</div>
+          </div>
+        </div>
+
+        <div class="forecast-layout">
+          <div>
+            <div class="table-header">
+              <div>日付</div>
+              <div>残高</div>
+              <div>内訳</div>
+              <div>forecast</div>
+              <div>actual</div>
+              <div>status</div>
+            </div>
+            <div class="table">
+              <div class="table-row">
+                <div>3/22</div>
+                <div>¥503,733</div>
+                <div>
+                  <b>forecast 1件 / 実績 1件</b>
+                  <br />
+                  <small>日常支出 forecast、Transfer test actual</small>
+                </div>
+                <div>¥-1,567</div>
+                <div>¥+5,000</div>
+                <div>safe</div>
+              </div>
+              <div class="table-row">
+                <div>3/23</div>
+                <div>¥507,167</div>
+                <div>
+                  <b>forecast 1件 / 実績 0件</b>
+                  <br />
+                  <small>日常支出 forecast</small>
+                </div>
+                <div>¥-1,567</div>
+                <div>-</div>
+                <div>safe</div>
+              </div>
+              <div class="table-row">
+                <div>3/27</div>
+                <div>¥415,900</div>
+                <div>
+                  <b>Monthly Rent</b>
+                  <br />
+                  <small>scheduled + 日常支出 forecast</small>
+                </div>
+                <div>¥-1,567</div>
+                <div>¥-85,000</div>
+                <div>watch</div>
+              </div>
+              <div class="table-row">
+                <div>4/10</div>
+                <div>¥444,033</div>
+                <div>
+                  <b>カード引落</b>
+                  <br />
+                  <small>Default Card</small>
+                </div>
+                <div>-</div>
+                <div>¥-48,000</div>
+                <div>lowest</div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="right-sticky">
+            <div class="wire-box summary-col">
+              <div class="label">Selected Day</div>
+              <div class="stack" style="margin-top:10px;">
+                <div class="summary-row">
+                  <b>2026-04-10</b>
+                  <div class="row-note">最低残高日</div>
+                </div>
+                <div class="summary-row">
+                  <b>構成イベント</b>
+                  <div class="row-note">カード引落 / forecast 0件 / actual 1件</div>
+                </div>
+                <div class="summary-row">
+                  <b>前日との差</b>
+                  <div class="row-note">-¥48,000</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="wire-box summary-col">
+              <div class="label">Table Controls</div>
+              <div class="stack" style="margin-top:10px;">
+                <div class="summary-row"><b>列表示切替</b><div class="row-note">forecast / actual / card</div></div>
+                <div class="summary-row"><b>並び替え</b><div class="row-note">日付 / 残高 / 差分</div></div>
+                <div class="summary-row"><b>フィルタ</b><div class="row-note">危険日のみ / Project / Category</div></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="ledger-entry" class="panel section page-card">
+        <div class="section-head">
+          <div>
+            <div class="label">Page 3</div>
+            <h2 class="section-title">Ledger & Entry</h2>
+            <div class="section-meta">
+              実績・予定・引落・資金移動の一覧と入力を分ける。大量入力時は表とフォームを同時に見られる。
+            </div>
+          </div>
+          <div class="chips">
+            <div class="pill">検索 / category / project</div>
+            <div class="pill">表示件数 100</div>
+          </div>
+        </div>
+
+        <div class="entry-layout">
+          <div class="wire-box summary-col">
+            <div class="label">Entry Panel</div>
+            <div class="tabs" style="margin-top:10px;">
+              <div class="tab active">イベント追加</div>
+              <div class="tab">実績入力</div>
+              <div class="tab">引落入力</div>
+              <div class="tab">資金移動</div>
+              <div class="tab">口座追加</div>
+            </div>
+            <div class="form-grid">
+              <div class="input-cell">イベント名</div>
+              <div class="input-cell">金額</div>
+              <div class="input-cell">日付</div>
+              <div class="input-cell">Project</div>
+              <div class="input-cell">Category</div>
+              <div class="input-cell">カード or 口座</div>
+              <div class="input-cell">繰り返しルール</div>
+              <div class="input-cell">順序</div>
+              <div class="input-cell wide">メモ</div>
+            </div>
+            <div class="kbd-row">
+              <div class="kbd">Tab</div>
+              <div class="kbd">Shift+Tab</div>
+              <div class="kbd">Enter 保存</div>
+              <div class="kbd">Ctrl+Enter 別保存</div>
+              <div class="kbd">/ 検索</div>
+            </div>
+            <div class="actions" style="margin-top:12px;">
+              <div class="button">保存</div>
+              <div class="pill">次の入力へ</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="table-header">
+              <div>日付</div>
+              <div>種別</div>
+              <div>内容</div>
+              <div>Project</div>
+              <div>金額</div>
+              <div>操作</div>
+            </div>
+            <div class="table">
+              <div class="table-row">
+                <div>3/27</div>
+                <div>scheduled</div>
+                <div><b>Monthly Rent</b><br /><small>FREQ=MONTHLY</small></div>
+                <div>-</div>
+                <div class="danger">-¥85,000</div>
+                <div>編集</div>
+              </div>
+              <div class="table-row">
+                <div>3/25</div>
+                <div>card</div>
+                <div><b>カード引落</b><br /><small>Default Card / Main Bank</small></div>
+                <div>-</div>
+                <div class="ok">+¥12,000</div>
+                <div>編集</div>
+              </div>
+              <div class="table-row">
+                <div>3/21</div>
+                <div>transaction</div>
+                <div><b>Coffee test</b><br /><small>カフェ</small></div>
+                <div>-</div>
+                <div class="danger">-¥1,200</div>
+                <div>編集</div>
+              </div>
+              <div class="table-row">
+                <div>3/10</div>
+                <div>card</div>
+                <div><b>カード引落</b><br /><small>Default Card / Main Bank</small></div>
+                <div>-</div>
+                <div class="ok">+¥48,000</div>
+                <div>編集</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="settings" class="panel section page-card">
+        <div class="section-head">
+          <div>
+            <div class="label">Page 4</div>
+            <h2 class="section-title">Settings / Master</h2>
+            <div class="section-meta">
+              MVP外でも、増えていくと別ページに逃がしたいもの。口座、カード、初期残高、締日・支払日など。
+            </div>
+          </div>
+        </div>
+
+        <div class="entry-layout">
+          <div class="wire-box summary-col">
+            <div class="label">Account Form</div>
+            <div class="form-grid" style="margin-top:10px;">
+              <div class="input-cell">口座名</div>
+              <div class="input-cell">種別</div>
+              <div class="input-cell">通貨</div>
+              <div class="input-cell">初期残高</div>
+            </div>
+          </div>
+
+          <div class="wire-box summary-col">
+            <div class="label">Card Form</div>
+            <div class="form-grid" style="margin-top:10px;">
+              <div class="input-cell">カード名</div>
+              <div class="input-cell">締日</div>
+              <div class="input-cell">支払日</div>
+              <div class="input-cell">引落口座</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

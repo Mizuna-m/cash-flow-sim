@@ -76,27 +76,52 @@ export type CardPayment = {
   updatedAt: string;
 };
 
+export type SimulationEventKind =
+  | "transaction"
+  | "balance-event"
+  | "scheduled-event"
+  | "daily-spend-forecast"
+  | "card-payment"
+  | "card-payment-forecast";
+
+export type DailyEventSummary = {
+  totalCount: number;
+  actualCount: number;
+  forecastCount: number;
+  actualAmount: string;
+  forecastAmount: string;
+  kinds: SimulationEventKind[];
+};
+
+export type DailyEventExplanation = {
+  id: string;
+  kind: SimulationEventKind;
+  source: "actual" | "forecast";
+  label: string;
+  detail: string;
+  amount: string;
+  orderIndex: number;
+  cardId: string | null;
+};
+
 export type DailySimulationSnapshot = {
   date: string;
   theoreticalBalance: string;
   actualBalance: string;
   short: boolean;
   cardBalances: Record<string, string>;
-  eventSummary: {
-    totalCount: number;
-    actualCount: number;
-    forecastCount: number;
-    actualAmount: string;
-    forecastAmount: string;
-    kinds: Array<
-      | "transaction"
-      | "balance-event"
-      | "scheduled-event"
-      | "daily-spend-forecast"
-      | "card-payment"
-      | "card-payment-forecast"
-    >;
-  };
+  eventSummary: DailyEventSummary;
+  events: DailyEventExplanation[];
+};
+
+export type ForecastSummary = {
+  actualsThroughDate: string | null;
+  firstForecastDate: string | null;
+  forecastDays: number;
+  dailySpendForecastCount: number;
+  dailySpendForecastAverageAmount: string;
+  cardPaymentForecastCount: number;
+  cardPaymentForecastTotalAmount: string;
 };
 
 export type SimulationResponse = {
@@ -104,15 +129,32 @@ export type SimulationResponse = {
   source: "database" | "demo";
   startDate: string;
   endDate: string;
-  forecastSummary: {
-    actualsThroughDate: string | null;
-    firstForecastDate: string | null;
-    forecastDays: number;
-    dailySpendForecastCount: number;
-    dailySpendForecastAverageAmount: string;
-    cardPaymentForecastCount: number;
-    cardPaymentForecastTotalAmount: string;
+  forecastSummary: ForecastSummary;
+};
+
+export type SimulationComparisonScenarioRequest = {
+  id: string;
+  label: string;
+  detail?: string;
+  excludedEventIds: string[];
+};
+
+export type SimulationComparisonScenarioResult = {
+  id: string;
+  label: string;
+  detail: string;
+  excludedEventIds: string[];
+  simulation: SimulationResponse;
+  diff: {
+    shortCountDelta: number;
+    lowestActualBalanceDelta: string;
+    endingActualBalanceDelta: string;
   };
+};
+
+export type SimulationComparisonResponse = {
+  base: SimulationResponse;
+  scenarios: SimulationComparisonScenarioResult[];
 };
 
 export type DashboardPayload = {
@@ -156,6 +198,10 @@ export type ScheduledEventCreateRequest = {
   cardId?: string | null;
   isActive?: boolean;
   orderIndex?: number;
+};
+
+export type ScheduledEventUpdateRequest = {
+  isActive?: boolean;
 };
 
 export type BalanceEventCreateRequest = {
