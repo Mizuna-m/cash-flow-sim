@@ -5,6 +5,7 @@ type CardConfig = {
   id: string;
   closing_day: number;
   payment_day: number;
+  settlement_account_id: string | null;
 };
 
 type UsageEvent = {
@@ -129,6 +130,7 @@ export function generateCardPaymentForecastEvents(input: {
         amount: amount.toFixed(2),
         orderIndex: 9500 + index,
         cardId,
+        accountId: cardById.get(cardId)?.settlement_account_id ?? null,
         basis: {
           sourceEventIds: groupedUsageIds.get(key) ?? [],
           summary: `${(groupedUsageIds.get(key) ?? []).length}件のカード利用を集計`

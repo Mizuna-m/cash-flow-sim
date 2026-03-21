@@ -8,20 +8,30 @@ export function buildDemoSimulation() {
     defaultCardId: "default-card",
     initialTheoreticalBalance: "1000",
     initialActualBalance: "1000",
+    liquidAccounts: [
+      {
+        id: "main-bank",
+        name: "Main Bank",
+        type: "bank",
+        initialBalance: "1000"
+      }
+    ],
     events: [
       {
         id: "salary",
         date: "2026-03-01",
         kind: "transaction",
         amount: "200",
-        orderIndex: 1
+        orderIndex: 1,
+        accountId: "main-bank"
       },
       {
         id: "groceries",
         date: "2026-03-02",
         kind: "transaction",
         amount: "-80",
-        orderIndex: 1
+        orderIndex: 1,
+        accountId: "main-bank"
       },
       {
         id: "travel",
@@ -44,7 +54,8 @@ export function buildDemoSimulation() {
         kind: "card-payment-forecast",
         amount: "380",
         orderIndex: 1,
-        cardId: "main-card"
+        cardId: "main-card",
+        accountId: "main-bank"
       }
     ]
   });

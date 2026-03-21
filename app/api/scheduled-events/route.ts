@@ -12,6 +12,7 @@ const scheduledEventInputSchema = z.object({
   endDate: z.string().nullable().optional(),
   recurrenceRule: z.string().nullable().optional(),
   amount: z.union([z.string(), z.number()]).transform((value) => String(value)),
+  accountId: postgresUuidSchema.nullable().optional(),
   tags: z.record(z.string(), z.unknown()).default({}),
   cardId: postgresUuidSchema.nullable().optional(),
   isActive: z.boolean().default(true),

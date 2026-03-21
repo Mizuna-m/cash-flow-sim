@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ConfirmDialog } from "@/src/components/confirm-dialog";
 import type {
   Account,
   BalanceEvent,
@@ -102,7 +103,10 @@ function buildLedgerItems(
       kind: "scheduled" as const,
       date: item.startDate,
       title: item.name,
-      detail: item.recurrenceRule || "scheduled event",
+      detail:
+        `${accountById.get(item.accountId ?? "") ?? "口座未指定"} / ${
+          item.recurrenceRule || "scheduled event"
+        }`,
       amount: item.amount,
       actionLabel: item.isActive ? "無効化" : "有効化"
     })),
@@ -111,7 +115,7 @@ function buildLedgerItems(
       kind: "transaction" as const,
       date: item.date,
       title: item.memo || "transaction",
-      detail: "transaction",
+      detail: accountById.get(item.accountId ?? "") ?? "口座未指定",
       amount: item.amount,
       actionLabel: "削除"
     })),
@@ -148,6 +152,7 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
   const [tab, setTab] = useState<ComposerTab>("scheduled");
   const [search, setSearch] = useState("");
   const [flash, setFlash] = useState("");
+  const [pendingActionItem, setPendingActionItem] = useState<LedgerItem | null>(null);
   const ledgerItems = useMemo(
     () =>
       buildLedgerItems(
@@ -189,7 +194,7 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
     }));
   }
 
-  async function handleAction(item: LedgerItem) {
+  async function executeAction(item: LedgerItem) {
     try {
       if (item.kind === "scheduled") {
         const target = data.scheduledEvents.find((event) => event.id === item.id);
@@ -206,6 +211,8 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
       setFlash("台帳を更新しました。");
     } catch (error) {
       setFlash(error instanceof Error ? error.message : "操作に失敗しました");
+    } finally {
+      setPendingActionItem(null);
     }
   }
 
@@ -216,6 +223,7 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
       endDate: String(formData.get("endDate") ?? "") || null,
       recurrenceRule: String(formData.get("recurrenceRule") ?? "") || null,
       amount: String(formData.get("amount") ?? ""),
+      accountId: String(formData.get("accountId") ?? "") || null,
       orderIndex: Number(formData.get("orderIndex") ?? 0),
       isActive: formData.get("isActive") === "on",
       cardId: String(formData.get("cardId") ?? "") || null,
@@ -228,6 +236,7 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
     const payload: TransactionCreateRequest = {
       date: String(formData.get("date") ?? ""),
       amount: String(formData.get("amount") ?? ""),
+      accountId: String(formData.get("accountId") ?? "") || null,
       memo: String(formData.get("memo") ?? ""),
       orderIndex: Number(formData.get("orderIndex") ?? 0),
       cardId: String(formData.get("cardId") ?? "") || null,
@@ -272,6 +281,35 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
 
   return (
     <section className="wire-panel wire-section">
+      <ConfirmDialog
+        open={pendingActionItem !== null}
+        title={
+          pendingActionItem?.kind === "scheduled"
+            ? `${pendingActionItem.actionLabel === "無効化" ? "予定を無効化" : "予定を再有効化"}`
+            : "削除の確認"
+        }
+        description={
+          pendingActionItem
+            ? pendingActionItem.kind === "scheduled"
+              ? `${pendingActionItem.title} を${pendingActionItem.actionLabel === "無効化" ? "無効化" : "再有効化"}します。`
+              : `${pendingActionItem.title} を削除します。この操作は元に戻せません。`
+            : ""
+        }
+        confirmLabel={
+          pendingActionItem?.kind === "scheduled"
+            ? pendingActionItem.actionLabel === "無効化"
+              ? "無効化する"
+              : "再有効化する"
+            : "削除する"
+        }
+        tone={pendingActionItem?.kind === "scheduled" ? "default" : "danger"}
+        onCancel={() => setPendingActionItem(null)}
+        onConfirm={() => {
+          if (pendingActionItem) {
+            void executeAction(pendingActionItem);
+          }
+        }}
+      />
       <div className="wire-section-head">
         <div>
           <h2 className="wire-section-title">左: 台帳 / 右: 入力</h2>
@@ -303,7 +341,7 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
                   {formatCurrency(item.amount)}
                 </div>
                 <div>
-                  <button type="button" className="wire-small-button" onClick={() => void handleAction(item)}>
+                  <button type="button" className="wire-small-button" onClick={() => setPendingActionItem(item)}>
                     {item.actionLabel}
                   </button>
                 </div>
@@ -350,7 +388,20 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
                 <input name="startDate" type="date" className="wire-input" defaultValue={data.simulation.startDate} />
                 <input name="project" className="wire-input" placeholder="Project" />
                 <input name="category" className="wire-input" placeholder="Category" />
-                <input name="cardId" className="wire-input" placeholder="カードID or 空欄" />
+                <select name="accountId" className="wire-input" defaultValue="">
+                  <option value="">口座未指定</option>
+                  {data.accounts
+                    .filter((account) => account.type === "cash" || account.type === "bank")
+                    .map((account) => (
+                      <option key={account.id} value={account.id}>{account.name}</option>
+                    ))}
+                </select>
+                <select name="cardId" className="wire-input" defaultValue="">
+                  <option value="">カードなし</option>
+                  {data.creditCards.map((card) => (
+                    <option key={card.id} value={card.id}>{card.name}</option>
+                  ))}
+                </select>
                 <input name="recurrenceRule" className="wire-input" placeholder="繰り返しルール" />
                 <input name="endDate" type="date" className="wire-input" />
                 <input name="orderIndex" type="number" min="0" defaultValue="0" className="wire-input" placeholder="順序" />
@@ -370,7 +421,20 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
                 <input name="category" className="wire-input" placeholder="Category" />
                 <input name="project" className="wire-input" placeholder="Project" />
                 <input name="memo" className="wire-input wire-input-wide" placeholder="メモ" />
-                <input name="cardId" className="wire-input" placeholder="カードID or 空欄" />
+                <select name="accountId" className="wire-input" defaultValue="">
+                  <option value="">口座未指定</option>
+                  {data.accounts
+                    .filter((account) => account.type === "cash" || account.type === "bank")
+                    .map((account) => (
+                      <option key={account.id} value={account.id}>{account.name}</option>
+                    ))}
+                </select>
+                <select name="cardId" className="wire-input" defaultValue="">
+                  <option value="">カードなし</option>
+                  {data.creditCards.map((card) => (
+                    <option key={card.id} value={card.id}>{card.name}</option>
+                  ))}
+                </select>
                 <input name="orderIndex" type="number" min="0" defaultValue="0" className="wire-input" placeholder="順序" />
               </div>
             </LedgerForm>

@@ -34,10 +34,20 @@ export type CreditCardCreateRequest = {
   isDefault?: boolean;
 };
 
+export type CreditCardUpdateRequest = {
+  name?: string;
+  closingDay?: number;
+  paymentDay?: number;
+  settlementAccountId?: string | null;
+  currency?: string;
+  isDefault?: boolean;
+};
+
 export type Transaction = {
   id: string;
   date: string;
   amount: string;
+  accountId: string | null;
   tags: JsonTags;
   cardId: string | null;
   memo: string;
@@ -53,6 +63,7 @@ export type ScheduledEvent = {
   endDate: string | null;
   recurrenceRule: string | null;
   amount: string;
+  accountId: string | null;
   tags: JsonTags;
   cardId: string | null;
   isActive: boolean;
@@ -123,6 +134,13 @@ export type DailySimulationSnapshot = {
   actualBalance: string;
   short: boolean;
   cardBalances: Record<string, string>;
+  liquidAccountBalances: Array<{
+    accountId: string;
+    name: string;
+    type: "cash" | "bank";
+    balance: string;
+  }>;
+  negativeLiquidAccountIds: string[];
   eventSummary: DailyEventSummary;
   events: DailyEventExplanation[];
 };
@@ -198,6 +216,7 @@ export type AccountCreateRequest = {
 export type TransactionCreateRequest = {
   date: string;
   amount: string;
+  accountId?: string | null;
   tags?: JsonTags;
   cardId?: string | null;
   memo?: string;
@@ -210,6 +229,7 @@ export type ScheduledEventCreateRequest = {
   endDate?: string | null;
   recurrenceRule?: string | null;
   amount: string;
+  accountId?: string | null;
   tags?: JsonTags;
   cardId?: string | null;
   isActive?: boolean;

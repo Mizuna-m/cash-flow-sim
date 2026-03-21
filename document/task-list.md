@@ -59,15 +59,21 @@ Status の意味:
 * 台帳から Transaction / CardPayment / BalanceEvent を削除できるようにした
 * ScheduledEvent は台帳から無効化 / 再有効化できるようにした
 * Settings の credit card 追加を mock から実 API 接続へ更新した
+* credit card の更新・削除・default 切替 API を追加し、Settings から選択編集できるようにした
+* 削除導線には確認 UI を入れ、`ScheduledEvent` は `isActive` で停止、実績系とカードは hard delete の方針で当面運用する
 * `/simulation` で ScheduledEvent を手動選択して compare API を叩けるようにした
+* `/simulation` で比較結果を複数保持し、表示する比較シナリオを切り替えられるようにした
 * forecast イベントに生成根拠メタデータを付与し、forecast ページで表示できるようにした
 * simulation / forecast / compare の理解用デモ seed と確認メモ `demo-walkthrough.md` を追加した
+* transaction / scheduled event に口座紐付けを追加し、現金系口座別残高を simulation に載せる変更を進めている
+* 現在の simulation は指定期間ごとに初期残高から再計算する実装であり、長期運用時の計算コスト対策は未着手
+* 既存実績データの標準列が `日付・取引先・取引先詳細・内容・金額・備考・種別・プロジェクト` であることを確認した
 
 次に着手するべきこと:
 
-* 各削除操作に確認 UI や soft-delete 方針が要るか判断する
-* credit card の更新・削除・default 切替を API 化する
-* compare 結果の複数保持やベース比較切替が必要か判断する
+* simulation の増分計算 / 月次スナップショットなど長期運用向けの高速化方針を決める
+* accounts / liquid account の表示順を明示管理するか判断する
+* カード引落予測に月次の支払日オーバーライドを入れるか判断する
 * API 変更時に OpenAPI も更新する運用を維持する
 
 ---
@@ -80,11 +86,11 @@ Status の意味:
 | M1 | Next.js + Podman の土台作成 | DONE | app と db がローカル起動する | compose build / up と HTTP 応答を確認済み |
 | M2 | DB スキーマ初版 | DONE | MVP中核エンティティのテーブルとマイグレーションがある | 初版 SQL と適用スクリプトを追加し、実 DB へ適用済み |
 | M3 | seed データ整備 | DOING | 主要ユースケースを再現できる seed がある | 初版 SQL seed と demo 用ケースを投入済み。simulation / forecast / compare の確認メモを追加 |
-| M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。日別 event summary、event explanation、forecast basis を追加済み |
+| M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。口座別 liquid balance と不足判定の拡張を進めている |
 | M5 | 予測ロジック実装 | DONE | DailySpendForecast と CardPaymentForecast が動く | 初版ロジックと forecast summary を実装済み。精度改善余地は残る |
 | M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions、scheduled-events、card-payments、balance-events を実装済み |
 | M7 | 最小UI 実装 | DOING | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | 新 UI ベースで dashboard / 入力 / simulation 可視化を更新済み。比較 UI は mock のまま |
-| M8 | シナリオ比較 | DOING | イベントON/OFFと比較ができる | compare API、差分表示、ScheduledEvent 無効化、手動シナリオ選択まで追加済み。比較履歴や保存は未実装 |
+| M8 | シナリオ比較 | DOING | イベントON/OFFと比較ができる | compare API、差分表示、ScheduledEvent 無効化、手動シナリオ選択、複数比較保持まで追加済み。比較履歴や保存は未実装 |
 | M9 | 移行導線の初版 | TODO | 直近3〜6か月を投入できる | CSVまたは手入力補助 |
 | M10 | 受け入れ確認 | TODO | AC の主要項目をテストまたは手順で確認できる | 重点は AC-01〜08, 16〜19, 21 |
 
@@ -105,22 +111,25 @@ Status の意味:
 | T09 | seed データセット作成 | DOING | T06,T07,T08 | 主要ケースを1回で投入でき、実 DB に適用済み |
 | T10 | イベント正規化ロジック実装 | DOING | T09 | Transaction / ScheduledEvent / BalanceEvent / CardPayment を simulation 用に変換できる |
 | T11 | 同日内ソート実装 | DONE | T10 | `order_index` で順序制御できる |
-| T12 | 残高更新ロジック実装 | DOING | T10,T11 | 理論残高 / 現実残高 / カード残高が更新される。日別 summary 追加済み |
+| T12 | 残高更新ロジック実装 | DOING | T10,T11 | 理論残高 / 現実残高 / カード残高に加えて、口座別 liquid balance が更新される |
 | T13 | ショート判定実装 | DONE | T12 | 閾値未満の日を抽出できる |
 | T14 | カード引落予測生成 | DONE | T12 | 締日・支払日から forecast を作れる |
 | T15 | 日常支出予測生成 | DONE | T09 | 実績欠損日に予測適用できる |
 | T16 | 実績優先ルール実装 | DONE | T14,T15 | 実績がある日には予測を抑制できる |
 | T17 | シミュレーション API | DONE | T12,T14,T15,T16 | 期間指定で結果を返せる |
-| T18 | CRUD API | DOING | T06,T07,T08 | create / list は主要系実装済み。実績系 delete、scheduled update、credit card create を追加済み |
+| T18 | CRUD API | DOING | T06,T07,T08 | create / list は主要系実装済み。実績系 delete、scheduled update、credit card の create/update/delete/default 切替を追加済み |
 | T19 | ダッシュボード画面 | DONE | T17 | 残高サマリが見える |
 | T20 | 取引入力画面 | DONE | T18 | Transaction 登録できる |
 | T21 | 予定入力画面 | DONE | T18 | ScheduledEvent 登録できる |
 | T22 | シミュレーション結果画面 | DONE | T17 | 理論/現実残高グラフが見える |
 | T23 | Project / Category 集計画面 | TODO | T18 | タグ別集計が見える |
 | T24 | イベント ON/OFF | DOING | T21,T22 | ScheduledEvent の無効化 PATCH と比較反映を追加済み。再有効化導線は限定的 |
-| T25 | シナリオ比較 UI/API | DOING | T24 | compare API、差分表示、手動選択 UI を追加済み。複数比較の保存は未実装 |
-| T26 | 初回移行導線 | TODO | T18 | 手入力またはCSV投入ができる |
+| T25 | シナリオ比較 UI/API | DOING | T24 | compare API、差分表示、手動選択 UI、複数比較保持を追加済み。比較の保存やベース切替は未実装 |
+| T26 | 初回移行導線 | TODO | T18 | 手入力またはCSV投入ができ、既存列 `日付・取引先・取引先詳細・内容・金額・備考・種別・プロジェクト` を欠落なく対応付けられる |
 | T27 | 受け入れテスト整備 | TODO | T09,T12,T14,T15,T16 | AC を検証できる |
+| T28 | simulation 高速化方針の設計 | TODO | T12,T17 | 初期残高からの全件再計算を避ける方針と保存単位を決める |
+| T29 | account 表示順の導入 | TODO | T06,T12 | 口座表示順を `display_order` 等で制御でき、forecast / settings / ledger で一貫して並ぶ |
+| T30 | カード支払日オーバーライド設計 | TODO | T14,T18 | 土日や祝日ずれを手動補正できる入力・保存方法を決める |
 
 ---
 
@@ -169,7 +178,7 @@ Status の意味:
 
 次の実装着手はこの順がよい。
 
-1. credit card の更新・削除・default 切替を API 化する
-2. 各削除操作の確認 UI / soft-delete 方針を決める
-3. compare 結果の複数保持やベース比較切替を判断する
-4. 初回移行導線の入力補助を作る
+1. 初回移行導線の入力補助を作る
+2. simulation の月次スナップショットまたは増分再計算の設計に入る
+3. account 表示順を明示管理する設計に入る
+4. カード支払日オーバーライドの必要性と保存単位を整理する

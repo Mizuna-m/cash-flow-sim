@@ -49,7 +49,8 @@ test("generateCardPaymentForecastEvents groups usage by card closing period", ()
       {
         id: "default-card",
         closing_day: 25,
-        payment_day: 10
+        payment_day: 10,
+        settlement_account_id: "main-bank"
       }
     ],
     usageEvents: [
@@ -71,4 +72,5 @@ test("generateCardPaymentForecastEvents groups usage by card closing period", ()
     sourceEventIds: ["u1", "u2"],
     summary: "2件のカード利用を集計"
   });
+  assert.equal(events[0]?.accountId, "main-bank");
 });

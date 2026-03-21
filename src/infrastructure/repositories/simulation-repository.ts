@@ -21,6 +21,8 @@ type TransactionRow = {
   id: string;
   date: string;
   amount: string;
+  account_id: string | null;
+  account_name: string | null;
   tags: Record<string, unknown>;
   card_id: string | null;
   memo: string;
@@ -32,6 +34,8 @@ type ScheduledEventRow = {
   start_date: string;
   name: string;
   amount: string;
+  account_id: string | null;
+  account_name: string | null;
   tags: Record<string, unknown>;
   recurrence_rule: string | null;
   card_id: string | null;
@@ -43,6 +47,8 @@ type BalanceEventRow = {
   date: string;
   amount: string;
   memo: string;
+  from_account_id: string | null;
+  to_account_id: string | null;
   from_account_name: string | null;
   to_account_name: string | null;
   order_index: number;
@@ -54,6 +60,7 @@ type CardPaymentRow = {
   amount: string;
   credit_card_id: string;
   credit_card_name: string;
+  source_account_id: string | null;
   source_account_name: string | null;
   memo: string;
   order_index: number;
@@ -98,34 +105,42 @@ export async function loadSimulationSeedData(
       dbPool.query<TransactionRow>(
         `
           SELECT
-            id,
-            date::text,
-            amount::text,
-            tags,
-            card_id::text,
-            memo,
-            order_index
+            transactions.id,
+            transactions.date::text,
+            transactions.amount::text,
+            transactions.account_id::text,
+            accounts.name AS account_name,
+            transactions.tags,
+            transactions.card_id::text,
+            transactions.memo,
+            transactions.order_index
           FROM transactions
+          LEFT JOIN accounts
+            ON accounts.id = transactions.account_id
           WHERE date BETWEEN $1::date AND $2::date
-          ORDER BY date ASC, order_index ASC, id ASC
+          ORDER BY transactions.date ASC, transactions.order_index ASC, transactions.id ASC
         `,
         [startDate, endDate]
       ),
       dbPool.query<ScheduledEventRow>(
         `
           SELECT
-            id,
-            start_date::text,
-            name,
-            amount::text,
-            tags,
-            recurrence_rule,
-            card_id::text,
-            order_index
+            scheduled_events.id,
+            scheduled_events.start_date::text,
+            scheduled_events.name,
+            scheduled_events.amount::text,
+            scheduled_events.account_id::text,
+            accounts.name AS account_name,
+            scheduled_events.tags,
+            scheduled_events.recurrence_rule,
+            scheduled_events.card_id::text,
+            scheduled_events.order_index
           FROM scheduled_events
-          WHERE is_active = TRUE
-            AND start_date BETWEEN $1::date AND $2::date
-          ORDER BY start_date ASC, order_index ASC, id ASC
+          LEFT JOIN accounts
+            ON accounts.id = scheduled_events.account_id
+          WHERE scheduled_events.is_active = TRUE
+            AND scheduled_events.start_date BETWEEN $1::date AND $2::date
+          ORDER BY scheduled_events.start_date ASC, scheduled_events.order_index ASC, scheduled_events.id ASC
         `,
         [startDate, endDate]
       ),
@@ -136,6 +151,8 @@ export async function loadSimulationSeedData(
             balance_events.date::text,
             balance_events.amount::text,
             balance_events.memo,
+            balance_events.from_account_id::text,
+            balance_events.to_account_id::text,
             from_account.name AS from_account_name,
             to_account.name AS to_account_name,
             balance_events.order_index
@@ -145,7 +162,7 @@ export async function loadSimulationSeedData(
           LEFT JOIN accounts AS to_account
             ON to_account.id = balance_events.to_account_id
           WHERE date BETWEEN $1::date AND $2::date
-          ORDER BY date ASC, order_index ASC, id ASC
+          ORDER BY balance_events.date ASC, balance_events.order_index ASC, balance_events.id ASC
         `,
         [startDate, endDate]
       ),
@@ -157,6 +174,7 @@ export async function loadSimulationSeedData(
             card_payments.amount::text,
             card_payments.credit_card_id::text,
             credit_cards.name AS credit_card_name,
+            card_payments.source_account_id::text,
             accounts.name AS source_account_name,
             card_payments.memo,
             card_payments.order_index
@@ -166,7 +184,7 @@ export async function loadSimulationSeedData(
           LEFT JOIN accounts
             ON accounts.id = card_payments.source_account_id
           WHERE date BETWEEN $1::date AND $2::date
-          ORDER BY date ASC, order_index ASC, id ASC
+          ORDER BY card_payments.date ASC, card_payments.order_index ASC, card_payments.id ASC
         `,
         [startDate, endDate]
       )

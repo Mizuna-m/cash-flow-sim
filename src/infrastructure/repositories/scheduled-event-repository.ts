@@ -7,6 +7,7 @@ export type ScheduledEventRecord = {
   endDate: string | null;
   recurrenceRule: string | null;
   amount: string;
+  accountId: string | null;
   tags: Record<string, unknown>;
   cardId: string | null;
   isActive: boolean;
@@ -22,6 +23,7 @@ type ScheduledEventRow = {
   end_date: string | null;
   recurrence_rule: string | null;
   amount: string;
+  account_id: string | null;
   tags: Record<string, unknown>;
   card_id: string | null;
   is_active: boolean;
@@ -38,6 +40,7 @@ function mapScheduledEvent(row: ScheduledEventRow): ScheduledEventRecord {
     endDate: row.end_date,
     recurrenceRule: row.recurrence_rule,
     amount: row.amount,
+    accountId: row.account_id,
     tags: row.tags,
     cardId: row.card_id,
     isActive: row.is_active,
@@ -80,6 +83,7 @@ export async function listScheduledEvents(filters?: {
         end_date::text,
         recurrence_rule,
         amount::text,
+        account_id::text,
         tags,
         card_id::text,
         is_active,
@@ -102,6 +106,7 @@ export async function createScheduledEvent(input: {
   endDate?: string | null;
   recurrenceRule?: string | null;
   amount: string;
+  accountId?: string | null;
   tags: Record<string, unknown>;
   cardId?: string | null;
   isActive?: boolean;
@@ -115,12 +120,13 @@ export async function createScheduledEvent(input: {
         end_date,
         recurrence_rule,
         amount,
+        account_id,
         tags,
         card_id,
         is_active,
         order_index
       )
-      VALUES ($1, $2::date, $3::date, $4, $5::numeric, $6::jsonb, $7::uuid, $8, $9)
+      VALUES ($1, $2::date, $3::date, $4, $5::numeric, $6::uuid, $7::jsonb, $8::uuid, $9, $10)
       RETURNING
         id,
         name,
@@ -128,6 +134,7 @@ export async function createScheduledEvent(input: {
         end_date::text,
         recurrence_rule,
         amount::text,
+        account_id::text,
         tags,
         card_id::text,
         is_active,
@@ -141,6 +148,7 @@ export async function createScheduledEvent(input: {
       input.endDate ?? null,
       input.recurrenceRule ?? null,
       input.amount,
+      input.accountId ?? null,
       JSON.stringify(input.tags),
       input.cardId ?? null,
       input.isActive ?? true,
@@ -183,6 +191,7 @@ export async function updateScheduledEvent(input: {
         end_date::text,
         recurrence_rule,
         amount::text,
+        account_id::text,
         tags,
         card_id::text,
         is_active,

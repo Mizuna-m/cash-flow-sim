@@ -759,6 +759,11 @@ a {
   cursor: pointer;
 }
 
+.wire-button-danger {
+  background: #8b3024;
+  border-color: #8b3024;
+}
+
 .wire-pill-field,
 .wire-input {
   color: #17212b;
@@ -836,6 +841,24 @@ a {
   gap: 14px;
 }
 
+.wire-sim-layout-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.62fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.wire-sim-main-column {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.wire-chart-notes {
+  margin-top: 10px;
+  padding-inline: 2px;
+}
+
 .wire-forecast-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -871,6 +894,20 @@ a {
 .wire-risk-panel,
 .wire-form-panel {
   padding: 14px;
+}
+
+.wire-risk-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-self: start;
+  min-height: 0;
+}
+
+.wire-risk-panel-list {
+  min-height: 0;
+  max-height: min(620px, calc(100vh - 230px));
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .wire-form-panel {
@@ -955,6 +992,11 @@ a {
   cursor: pointer;
 }
 
+.wire-list-item-selected {
+  border-color: #376ed4;
+  background: #eef4ff;
+}
+
 .wire-list-top {
   display: flex;
   justify-content: space-between;
@@ -1030,12 +1072,36 @@ a {
   align-items: center;
 }
 
+.wire-table-header-forecast-full,
+.wire-table-row-forecast-full {
+  display: grid;
+  grid-template-columns: 88px 150px 120px minmax(220px, 1fr) minmax(320px, 1.4fr) 110px;
+  gap: 10px;
+  align-items: start;
+}
+
+.wire-table-scroll {
+  overflow-x: auto;
+}
+
+.wire-table-fixed-width {
+  min-width: 1240px;
+}
+
 .wire-table-header-ledger,
 .wire-table-row-ledger {
   display: grid;
   grid-template-columns: 88px 100px 1fr 120px 90px;
   gap: 10px;
   align-items: center;
+}
+
+.wire-table-header-sim-detail,
+.wire-table-row-sim-detail {
+  display: grid;
+  grid-template-columns: 88px 160px minmax(220px, 1fr) minmax(260px, 1.2fr) 110px;
+  gap: 10px;
+  align-items: start;
 }
 
 .wire-table-row {
@@ -1046,6 +1112,60 @@ a {
 .wire-table-row-ledger {
   width: 100%;
   text-align: left;
+}
+
+.wire-table-cell-balance {
+  font-variant-numeric: tabular-nums;
+  font-family:
+    "SFMono-Regular",
+    "SF Mono",
+    "JetBrains Mono",
+    "IBM Plex Mono",
+    "Cascadia Code",
+    "Fira Code",
+    "Menlo",
+    "Monaco",
+    "Consolas",
+    monospace;
+  letter-spacing: -0.01em;
+}
+
+.wire-table-emphasis {
+  font-weight: 500;
+  color: #17212b;
+}
+
+.wire-table-row-forecast-dense > div:first-child {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.wire-table-header-forecast-dense {
+  padding: 0 8px 6px;
+}
+
+.wire-table-forecast-dense {
+  gap: 0;
+}
+
+.wire-table-row-forecast-dense {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid #d7d0c4;
+}
+
+.wire-table-row-forecast-dense:first-child {
+  border-top: 1px solid #d7d0c4;
+}
+
+.wire-event-note {
+  line-height: 1.4;
+}
+
+.wire-stack-compact {
+  gap: 3px;
 }
 
 .wire-table-row-forecast.active {
@@ -1162,6 +1282,46 @@ a {
   font-size: 14px;
 }
 
+.wire-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(21, 32, 42, 0.28);
+  backdrop-filter: blur(4px);
+}
+
+.wire-modal {
+  width: min(460px, calc(100vw - 32px));
+  padding: 18px;
+  border: 1px solid #d7d0c4;
+  border-radius: 20px;
+  background: #fffdfa;
+  box-shadow: 0 18px 48px rgba(21, 32, 42, 0.16);
+}
+
+.wire-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.wire-modal-body {
+  margin-top: 10px;
+  color: #6d7780;
+  line-height: 1.6;
+}
+
+.wire-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 .wire-right-sticky {
   display: grid;
   gap: 12px;
@@ -1178,6 +1338,7 @@ a {
   }
 
   .wire-sim-layout-large,
+  .wire-sim-layout-split,
   .wire-forecast-layout,
   .wire-entry-layout {
     grid-template-columns: 1fr;
@@ -1201,6 +1362,8 @@ a {
   .wire-settings-layout,
   .wire-table-header-forecast,
   .wire-table-row-forecast,
+  .wire-table-header-sim-detail,
+  .wire-table-row-sim-detail,
   .wire-table-header-ledger,
   .wire-table-row-ledger {
     grid-template-columns: 1fr;

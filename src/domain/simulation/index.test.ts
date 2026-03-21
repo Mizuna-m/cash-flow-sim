@@ -24,20 +24,30 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
     defaultCardId: "default-card",
     initialTheoreticalBalance: "1000",
     initialActualBalance: "1000",
+    liquidAccounts: [
+      {
+        id: "main-bank",
+        name: "Main Bank",
+        type: "bank",
+        initialBalance: "1000"
+      }
+    ],
     events: [
       {
         id: "salary",
         date: "2026-03-01",
         kind: "transaction",
         amount: "200",
-        orderIndex: 1
+        orderIndex: 1,
+        accountId: "main-bank"
       },
       {
         id: "groceries",
         date: "2026-03-02",
         kind: "transaction",
         amount: "-80",
-        orderIndex: 1
+        orderIndex: 1,
+        accountId: "main-bank"
       },
       {
         id: "rent",
@@ -53,7 +63,8 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
         kind: "card-payment-forecast",
         amount: "380",
         orderIndex: 1,
-        cardId: "main-card"
+        cardId: "main-card",
+        accountId: "main-bank"
       }
     ]
   });
@@ -62,8 +73,16 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
   assert.equal(snapshots[0]?.actualBalance, "1200.00");
 
   assert.equal(snapshots[1]?.theoreticalBalance, "1120.00");
-  assert.equal(snapshots[1]?.actualBalance, "1200.00");
-  assert.deepEqual(snapshots[1]?.cardBalances, { "default-card": "80.00" });
+  assert.equal(snapshots[1]?.actualBalance, "1120.00");
+  assert.deepEqual(snapshots[1]?.cardBalances, {});
+  assert.deepEqual(snapshots[1]?.liquidAccountBalances, [
+    {
+      accountId: "main-bank",
+      name: "Main Bank",
+      type: "bank",
+      balance: "1120.00"
+    }
+  ]);
   assert.deepEqual(snapshots[1]?.eventSummary, {
     totalCount: 1,
     actualCount: 1,
@@ -87,17 +106,15 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
   ]);
 
   assert.equal(snapshots[2]?.theoreticalBalance, "820.00");
-  assert.equal(snapshots[2]?.actualBalance, "1200.00");
+  assert.equal(snapshots[2]?.actualBalance, "1120.00");
   assert.deepEqual(snapshots[2]?.cardBalances, {
-    "default-card": "80.00",
     "main-card": "300.00"
   });
 
   assert.equal(snapshots[3]?.theoreticalBalance, "820.00");
-  assert.equal(snapshots[3]?.actualBalance, "820.00");
+  assert.equal(snapshots[3]?.actualBalance, "740.00");
   assert.equal(snapshots[3]?.short, false);
   assert.deepEqual(snapshots[3]?.cardBalances, {
-    "default-card": "80.00",
     "main-card": "-80.00"
   });
   assert.deepEqual(snapshots[3]?.eventSummary, {
@@ -131,19 +148,49 @@ test("simulateRange does not change aggregate actual balance for balance-event t
     defaultCardId: "default-card",
     initialTheoreticalBalance: "1000",
     initialActualBalance: "1000",
+    liquidAccounts: [
+      {
+        id: "main-bank",
+        name: "Main Bank",
+        type: "bank",
+        initialBalance: "1000"
+      },
+      {
+        id: "wallet",
+        name: "Wallet",
+        type: "cash",
+        initialBalance: "0"
+      }
+    ],
     events: [
       {
         id: "transfer",
         date: "2026-03-01",
         kind: "balance-event",
         amount: "100",
-        orderIndex: 1
+        orderIndex: 1,
+        fromAccountId: "main-bank",
+        toAccountId: "wallet"
       }
     ]
   });
 
   assert.equal(snapshots[0]?.theoreticalBalance, "1000.00");
   assert.equal(snapshots[0]?.actualBalance, "1000.00");
+  assert.deepEqual(snapshots[0]?.liquidAccountBalances, [
+    {
+      accountId: "main-bank",
+      name: "Main Bank",
+      type: "bank",
+      balance: "900.00"
+    },
+    {
+      accountId: "wallet",
+      name: "Wallet",
+      type: "cash",
+      balance: "100.00"
+    }
+  ]);
   assert.deepEqual(snapshots[0]?.eventSummary, {
     totalCount: 1,
     actualCount: 1,

@@ -40,11 +40,35 @@ function formatCardBalances(cardBalances: Map<string, Decimal>) {
   );
 }
 
+function incrementLiquidAccountBalance(
+  balances: Map<string, Decimal>,
+  accountId: string,
+  amount: Decimal
+) {
+  const current = balances.get(accountId) ?? new Decimal(0);
+  balances.set(accountId, current.plus(amount));
+}
+
+function formatLiquidAccountBalances(
+  accountBalances: Map<string, Decimal>,
+  liquidAccounts: SimulationInput["liquidAccounts"]
+) {
+  return liquidAccounts
+    .map((account) => ({
+      accountId: account.id,
+      name: account.name,
+      type: account.type,
+      balance: (accountBalances.get(account.id) ?? new Decimal(account.initialBalance)).toFixed(2)
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
 function applyEvent(
   event: SimulationEvent,
   theoreticalBalance: Decimal,
   actualBalance: Decimal,
   cardBalances: Map<string, Decimal>,
+  liquidAccountBalances: Map<string, Decimal>,
   defaultCardId: string
 ) {
   const amount = new Decimal(event.amount);
@@ -54,13 +78,31 @@ function applyEvent(
     case "transaction":
       if (amount.isNegative()) {
         theoreticalBalance = theoreticalBalance.plus(amount);
-        incrementCardBalance(cardBalances, cardId, amount.abs());
+
+        if (event.cardId) {
+          incrementCardBalance(cardBalances, cardId, amount.abs());
+        } else if (event.accountId) {
+          actualBalance = actualBalance.plus(amount);
+          incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount);
+        }
       } else {
         theoreticalBalance = theoreticalBalance.plus(amount);
         actualBalance = actualBalance.plus(amount);
+
+        if (event.accountId) {
+          incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount);
+        }
       }
       break;
     case "scheduled-event":
+      theoreticalBalance = theoreticalBalance.plus(amount);
+
+      if (event.cardId && amount.isNegative()) {
+        incrementCardBalance(cardBalances, cardId, amount.abs());
+      } else if (event.accountId) {
+        incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount);
+      }
+      break;
     case "daily-spend-forecast":
       theoreticalBalance = theoreticalBalance.plus(amount);
       incrementCardBalance(cardBalances, cardId, amount.abs());
@@ -69,8 +111,18 @@ function applyEvent(
     case "card-payment-forecast":
       actualBalance = actualBalance.minus(amount.abs());
       incrementCardBalance(cardBalances, cardId, amount.abs().negated());
+
+      if (event.accountId) {
+        incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount.abs().negated());
+      }
       break;
     case "balance-event":
+      if (event.fromAccountId) {
+        incrementLiquidAccountBalance(liquidAccountBalances, event.fromAccountId, amount.negated());
+      }
+      if (event.toAccountId) {
+        incrementLiquidAccountBalance(liquidAccountBalances, event.toAccountId, amount);
+      }
       break;
     default:
       break;
@@ -167,6 +219,9 @@ export function simulateRange(input: SimulationInput): DailySimulationSnapshot[]
   let theoreticalBalance = new Decimal(input.initialTheoreticalBalance);
   let actualBalance = new Decimal(input.initialActualBalance);
   const cardBalances = new Map<string, Decimal>();
+  const liquidAccountBalances = new Map(
+    input.liquidAccounts.map((account) => [account.id, new Decimal(account.initialBalance)])
+  );
   const dailyEvents = new Map<string, SimulationEvent[]>();
 
   for (const event of sortSimulationEvents(input.events)) {
@@ -184,18 +239,29 @@ export function simulateRange(input: SimulationInput): DailySimulationSnapshot[]
         theoreticalBalance,
         actualBalance,
         cardBalances,
+        liquidAccountBalances,
         input.defaultCardId
       );
       theoreticalBalance = next.theoreticalBalance;
       actualBalance = next.actualBalance;
     }
 
+    const liquidAccountSnapshot = formatLiquidAccountBalances(
+      liquidAccountBalances,
+      input.liquidAccounts
+    );
+    const negativeLiquidAccountIds = liquidAccountSnapshot
+      .filter((account) => new Decimal(account.balance).lessThan(0))
+      .map((account) => account.accountId);
+
     return {
       date,
       theoreticalBalance: theoreticalBalance.toFixed(2),
       actualBalance: actualBalance.toFixed(2),
-      short: actualBalance.lessThan(threshold),
+      short: actualBalance.lessThan(threshold) || negativeLiquidAccountIds.length > 0,
       cardBalances: formatCardBalances(cardBalances),
+      liquidAccountBalances: liquidAccountSnapshot,
+      negativeLiquidAccountIds,
       eventSummary: summarizeEvents(events),
       events: buildEventExplanations(events, input.defaultCardId)
     };

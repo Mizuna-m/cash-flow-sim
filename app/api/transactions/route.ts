@@ -9,6 +9,7 @@ import {
 const transactionInputSchema = z.object({
   date: z.string().min(1),
   amount: z.union([z.string(), z.number()]).transform((value) => String(value)),
+  accountId: postgresUuidSchema.nullable().optional(),
   tags: z.record(z.string(), z.unknown()).default({}),
   cardId: postgresUuidSchema.nullable().optional(),
   memo: z.string().default(""),

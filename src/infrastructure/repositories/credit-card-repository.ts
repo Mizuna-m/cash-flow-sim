@@ -117,3 +117,154 @@ export async function createCreditCard(input: {
     client.release();
   }
 }
+
+export async function updateCreditCard(input: {
+  id: string;
+  name?: string;
+  closingDay?: number;
+  paymentDay?: number;
+  settlementAccountId?: string | null;
+  currency?: string;
+  isDefault?: boolean;
+}) {
+  const client = await dbPool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const currentResult = await client.query<CreditCardRow>(
+      `
+        SELECT
+          id,
+          name,
+          closing_day,
+          payment_day,
+          settlement_account_id::text,
+          currency,
+          is_default,
+          created_at::text,
+          updated_at::text
+        FROM credit_cards
+        WHERE id = $1::uuid
+      `,
+      [input.id]
+    );
+
+    const current = currentResult.rows[0];
+
+    if (!current) {
+      throw new Error("Credit card not found");
+    }
+
+    if (input.isDefault) {
+      await client.query(
+        `UPDATE credit_cards SET is_default = FALSE WHERE is_default = TRUE AND id <> $1::uuid`,
+        [input.id]
+      );
+    }
+
+    const result = await client.query<CreditCardRow>(
+      `
+        UPDATE credit_cards
+        SET
+          name = $2,
+          closing_day = $3,
+          payment_day = $4,
+          settlement_account_id = $5::uuid,
+          currency = $6,
+          is_default = $7,
+          updated_at = NOW()
+        WHERE id = $1::uuid
+        RETURNING
+          id,
+          name,
+          closing_day,
+          payment_day,
+          settlement_account_id::text,
+          currency,
+          is_default,
+          created_at::text,
+          updated_at::text
+      `,
+      [
+        input.id,
+        input.name ?? current.name,
+        input.closingDay ?? current.closing_day,
+        input.paymentDay ?? current.payment_day,
+        input.settlementAccountId === undefined
+          ? current.settlement_account_id
+          : input.settlementAccountId,
+        input.currency ?? current.currency,
+        input.isDefault ?? current.is_default
+      ]
+    );
+
+    await client.query("COMMIT");
+    return mapCreditCard(result.rows[0]);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteCreditCard(id: string) {
+  const client = await dbPool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query<CreditCardRow>(
+      `
+        DELETE FROM credit_cards
+        WHERE id = $1::uuid
+        RETURNING
+          id,
+          name,
+          closing_day,
+          payment_day,
+          settlement_account_id::text,
+          currency,
+          is_default,
+          created_at::text,
+          updated_at::text
+      `,
+      [id]
+    );
+
+    const creditCard = result.rows[0];
+
+    if (!creditCard) {
+      throw new Error("Credit card not found");
+    }
+
+    if (creditCard.is_default) {
+      await client.query(
+        `
+          UPDATE credit_cards
+          SET is_default = TRUE, updated_at = NOW()
+          WHERE id = (
+            SELECT id
+            FROM credit_cards
+            ORDER BY created_at ASC, id ASC
+            LIMIT 1
+          )
+        `
+      );
+    }
+
+    await client.query("COMMIT");
+    return mapCreditCard(creditCard);
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    if (typeof error === "object" && error && "code" in error && error.code === "23503") {
+      throw new Error("使用中のカードは削除できません。関連する取引や予定を先に整理してください。");
+    }
+
+    throw error;
+  } finally {
+    client.release();
+  }
+}

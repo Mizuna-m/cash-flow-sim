@@ -62,11 +62,13 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       kind: "transaction",
       amount: transaction.amount,
       orderIndex: transaction.order_index,
+      accountId: transaction.account_id,
       cardId: transaction.card_id,
       source: "actual",
       label: transaction.memo || "実績",
       detail:
         compactDetail([
+          transaction.account_name,
           getTagText(transaction.tags, "project"),
           getTagText(transaction.tags, "category")
         ]) || "transaction"
@@ -80,11 +82,13 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       kind: "scheduled-event",
       amount: scheduledEvent.amount,
       orderIndex: scheduledEvent.order_index,
+      accountId: scheduledEvent.account_id,
       cardId: scheduledEvent.card_id,
       source: "actual",
       label: scheduledEvent.name,
       detail:
         compactDetail([
+          scheduledEvent.account_name,
           scheduledEvent.recurrence_rule,
           getTagText(scheduledEvent.tags, "project"),
           getTagText(scheduledEvent.tags, "category")
@@ -99,6 +103,8 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       kind: "balance-event",
       amount: balanceEvent.amount,
       orderIndex: balanceEvent.order_index,
+      fromAccountId: balanceEvent.from_account_id,
+      toAccountId: balanceEvent.to_account_id,
       source: "actual",
       label: balanceEvent.memo || "資金移動",
       detail:
@@ -113,6 +119,7 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       kind: "card-payment",
       amount: cardPayment.amount,
       orderIndex: cardPayment.order_index,
+      accountId: cardPayment.source_account_id,
       cardId: cardPayment.credit_card_id,
       source: "actual",
       label: cardPayment.memo || "カード引落",
@@ -235,6 +242,17 @@ export async function buildDatabaseSimulation(
     defaultCardId,
     initialTheoreticalBalance: initialBalance.toFixed(2),
     initialActualBalance: initialBalance.toFixed(2),
+    liquidAccounts: data.accounts
+      .filter(
+        (account): account is (typeof data.accounts)[number] & { type: "cash" | "bank" } =>
+          account.type === "cash" || account.type === "bank"
+      )
+      .map((account) => ({
+        id: account.id,
+        name: account.name,
+        type: account.type,
+        initialBalance: account.initial_balance
+      })),
     events: [...baseEvents, ...decoratedDailySpendForecastEvents, ...cardPaymentForecastEvents]
   });
 

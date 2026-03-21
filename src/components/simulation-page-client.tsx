@@ -172,8 +172,8 @@ function buildScenarioCandidates(events: ScheduledEvent[]): SimulationComparison
     .slice(0, 3)
     .map((event) => ({
       id: event.id,
-      label: `${event.name} を外した場合`,
-      detail: "この予定を無効化",
+      label: `${event.name} を外す`,
+      detail: "この予定を除いた比較",
       excludedEventIds: [event.id]
     }));
 }
@@ -187,6 +187,7 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
     }
   });
   const [comparison, setComparison] = useState<SimulationComparisonResponse | null>(null);
+  const [activeComparisonScenarioId, setActiveComparisonScenarioId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedScenarioIds, setSelectedScenarioIds] = useState<string[]>([]);
@@ -209,7 +210,10 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
     () => selectableScheduledEvents.filter((event) => selectedScenarioIds.includes(event.id)),
     [selectableScheduledEvents, selectedScenarioIds]
   );
-  const firstComparisonScenario = comparison?.scenarios[0] ?? null;
+  const firstComparisonScenario =
+    comparison?.scenarios.find((scenario) => scenario.id === activeComparisonScenarioId) ??
+    comparison?.scenarios[0] ??
+    null;
   const chartData = useMemo(
     () =>
       firstComparisonScenario
@@ -275,6 +279,7 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
         range
       }));
       setComparison(null);
+      setActiveComparisonScenarioId(null);
       setSelectedScenarioIds([]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "再計算に失敗しました");
@@ -288,14 +293,72 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
     setMessage("");
 
     try {
+      const scenarios = comparison?.scenarios ?? [];
+      const nextScenarios = [
+        ...scenarios
+          .filter((existingScenario) => existingScenario.id !== scenario.id)
+          .map((existingScenario) => ({
+            id: existingScenario.id,
+            label: existingScenario.label,
+            detail: existingScenario.detail,
+            excludedEventIds: existingScenario.excludedEventIds
+          })),
+        scenario
+      ];
       const payload = await postJson<SimulationComparisonResponse>("/api/simulation/compare", {
         startDate: state.range.startDate,
         endDate: state.range.endDate,
-        scenarios: [scenario]
+        scenarios: nextScenarios
       });
       setComparison(payload);
+      setActiveComparisonScenarioId(scenario.id);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "比較に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRemoveComparisonScenario(scenarioId: string) {
+    if (!comparison) {
+      return;
+    }
+
+    const remainingScenarios = comparison.scenarios
+      .filter((scenario) => scenario.id !== scenarioId)
+      .map((scenario) => ({
+        id: scenario.id,
+        label: scenario.label,
+        detail: scenario.detail,
+        excludedEventIds: scenario.excludedEventIds
+      }));
+
+    if (remainingScenarios.length === 0) {
+      setComparison(null);
+      setActiveComparisonScenarioId(null);
+      setMessage("比較表示を解除しました。");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const payload = await postJson<SimulationComparisonResponse>("/api/simulation/compare", {
+        startDate: state.range.startDate,
+        endDate: state.range.endDate,
+        scenarios: remainingScenarios
+      });
+      setComparison(payload);
+      setActiveComparisonScenarioId((current) => {
+        if (current && current !== scenarioId) {
+          return current;
+        }
+
+        return payload.scenarios[0]?.id ?? null;
+      });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "比較更新に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -311,8 +374,8 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
       id: `manual-${selectedScenarioEvents.map((event) => event.id).join("-")}`,
       label:
         selectedScenarioEvents.length === 1
-          ? `${selectedScenarioEvents[0]?.name ?? "予定"} を外した場合`
-          : `${selectedScenarioEvents.length}件の予定を外した場合`,
+          ? `${selectedScenarioEvents[0]?.name ?? "予定"} を外す`
+          : `${selectedScenarioEvents.length}件の予定を外す`,
       detail: selectedScenarioEvents.map((event) => event.name).join(" / "),
       excludedEventIds: selectedScenarioEvents.map((event) => event.id)
     });
@@ -352,105 +415,106 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
         ))}
       </div>
 
-      <div className="wire-sim-layout-large">
-        <div className="wire-box wire-chart-box">
-          <div className="wire-box-head">
-            <span className="wire-label">Balance Chart</span>
-            {lowest ? <span className="wire-inline-chip">最低残高 {formatDate(lowest.date)}</span> : null}
-            {firstComparisonScenario ? (
-              <span className="wire-inline-chip">{firstComparisonScenario.label}</span>
-            ) : null}
-          </div>
-          <div className="wire-chart-area-lg">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 8 }}>
-                <CartesianGrid stroke="rgba(23,33,43,0.08)" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fill: "#6d7780", fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  minTickGap={20}
-                />
-                <YAxis
-                  domain={yDomain as [number, number]}
-                  tick={{ fill: "#6d7780", fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={86}
-                  tickFormatter={(value) => formatCurrency(value)}
-                />
-                <Tooltip
-                  formatter={(value) => formatCurrency(Number(value ?? 0))}
-                  labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid #d7d0c4",
-                    background: "rgba(255,253,249,0.98)"
-                  }}
-                />
-                {lowest ? (
-                  <ReferenceLine
-                    x={formatDate(lowest.date)}
-                    stroke="#c65b4d"
-                    strokeDasharray="7 7"
-                  />
-                ) : null}
-                <Line
-                  type="monotone"
-                  dataKey="theoretical"
-                  name="base theoretical"
-                  stroke={firstComparisonScenario ? "#8a99ab" : "#376ed4"}
-                  strokeWidth={firstComparisonScenario ? 2 : 3}
-                  dot={false}
-                />
+      <div className="wire-sim-layout-split">
+        <div className="wire-sim-main-column">
+          <div className="wire-box wire-chart-box">
+            <div className="wire-box-head">
+              <span className="wire-label">Balance Chart</span>
+              <div className="wire-inline-actions">
+                {lowest ? <span className="wire-inline-chip">最低残高 {formatDate(lowest.date)}</span> : null}
                 {firstComparisonScenario ? (
+                  <>
+                    <span className="wire-inline-chip">{firstComparisonScenario.label}</span>
+                    <button
+                      type="button"
+                      className="wire-small-button wire-small-button-ghost"
+                      onClick={() => {
+                        setComparison(null);
+                        setActiveComparisonScenarioId(null);
+                        setMessage("比較表示を解除しました。");
+                      }}
+                    >
+                      比較解除
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+            <div className="wire-chart-area-lg">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 8 }}>
+                  <CartesianGrid stroke="rgba(23,33,43,0.08)" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: "#6d7780", fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={20}
+                  />
+                  <YAxis
+                    domain={yDomain as [number, number]}
+                    tick={{ fill: "#6d7780", fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={86}
+                    tickFormatter={(value) => formatCurrency(value)}
+                  />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value ?? 0))}
+                    labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid #d7d0c4",
+                      background: "rgba(255,253,249,0.98)"
+                    }}
+                  />
+                  {lowest ? (
+                    <ReferenceLine
+                      x={formatDate(lowest.date)}
+                      stroke="#c65b4d"
+                      strokeDasharray="7 7"
+                    />
+                  ) : null}
                   <Line
                     type="monotone"
-                    dataKey="comparisonTheoretical"
-                    name="scenario theoretical"
-                    stroke="#c65b4d"
-                    strokeWidth={3}
+                    dataKey="theoretical"
+                    name="base theoretical"
+                    stroke={firstComparisonScenario ? "#8a99ab" : "#376ed4"}
+                    strokeWidth={firstComparisonScenario ? 2 : 3}
                     dot={false}
                   />
-                ) : null}
-                <Line
-                  type="monotone"
-                  dataKey="actual"
-                  name="actual"
-                  stroke="#4f7d60"
-                  strokeWidth={3}
-                  strokeDasharray={firstComparisonScenario ? "6 6" : undefined}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="wire-box wire-summary-panel">
-          <div className="wire-box-head">
-            <span className="wire-label">Summary</span>
-          </div>
-          <div className="wire-stack">
-            <div className="wire-summary-row">
-              <b>actuals 反映最終日</b>
-              <div className="wire-row-note">
-                {state.simulation.forecastSummary.actualsThroughDate ?? "-"}
-              </div>
+                  {firstComparisonScenario ? (
+                    <Line
+                      type="monotone"
+                      dataKey="comparisonTheoretical"
+                      name="scenario theoretical"
+                      stroke="#c65b4d"
+                      strokeWidth={3}
+                      dot={false}
+                    />
+                  ) : null}
+                  <Line
+                    type="monotone"
+                    dataKey="actual"
+                    name="actual"
+                    stroke="#4f7d60"
+                    strokeWidth={3}
+                    strokeDasharray={firstComparisonScenario ? "6 6" : undefined}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-            <div className="wire-summary-row">
-              <b>カード引落予測</b>
-              <div className="wire-row-note">
-                {state.simulation.forecastSummary.cardPaymentForecastCount}件 /{" "}
-                {formatCurrency(state.simulation.forecastSummary.cardPaymentForecastTotalAmount)}
-              </div>
-            </div>
-            <div className="wire-summary-row">
-              <b>比較API</b>
-              <div className="wire-row-note">
-                {comparison ? "比較結果あり" : "候補を選ぶと差分を返す"}
-              </div>
+            <div className="wire-inline-actions wire-chart-notes">
+              <span className="wire-row-sub">
+                actuals {state.simulation.forecastSummary.actualsThroughDate ?? "-"}
+              </span>
+              <span className="wire-row-sub">
+                引落予測 {state.simulation.forecastSummary.cardPaymentForecastCount}件
+              </span>
+              {comparison ? (
+                <span className="wire-row-sub">{comparison.scenarios.length}件比較中</span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -459,7 +523,7 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
           <div className="wire-box-head">
             <span className="wire-label">Risk / Compare</span>
           </div>
-          <div className="wire-list">
+          <div className="wire-list wire-risk-panel-list">
             {scenarioCandidates.map((scenario) => (
               <button
                 key={scenario.id}
@@ -476,8 +540,11 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
             ))}
             <div className="wire-list-item">
               <div className="wire-list-top">
-                <div className="wire-row-title">手動シナリオ選択</div>
-                <div className="wire-row-action">{selectedScenarioIds.length}件選択中</div>
+                <div className="wire-row-title">手動比較</div>
+                <div className="wire-row-action">{selectedScenarioIds.length}件選択</div>
+              </div>
+              <div className="wire-row-sub">
+                チェックした予定を外した比較を作ります。
               </div>
               <div className="wire-select-list">
                 {selectableScheduledEvents.length === 0 ? (
@@ -507,7 +574,7 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                   onClick={() => void handleSelectedCompare()}
                   disabled={selectedScenarioIds.length === 0 || loading}
                 >
-                  選択中の予定で比較
+                  選択で比較
                 </button>
                 <button
                   type="button"
@@ -521,7 +588,10 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
             </div>
             {comparison ? (
               comparison.scenarios.map((scenario) => (
-                <div key={scenario.id} className="wire-list-item">
+                <div
+                  key={scenario.id}
+                  className={`wire-list-item ${firstComparisonScenario?.id === scenario.id ? "wire-list-item-selected" : ""}`}
+                >
                   <div className="wire-list-top">
                     <div className="wire-row-title">{scenario.label}</div>
                     <div
@@ -541,6 +611,22 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                     actual short {scenario.diff.shortCountDelta >= 0 ? "+" : ""}
                     {scenario.diff.shortCountDelta} / actual ending{" "}
                     {formatCurrency(scenario.diff.endingActualBalanceDelta)}
+                  </div>
+                  <div className="wire-inline-actions">
+                    <button
+                      type="button"
+                      className="wire-small-button"
+                      onClick={() => setActiveComparisonScenarioId(scenario.id)}
+                    >
+                      この比較を表示
+                    </button>
+                    <button
+                      type="button"
+                      className="wire-small-button wire-small-button-ghost"
+                      onClick={() => void handleRemoveComparisonScenario(scenario.id)}
+                    >
+                      比較から外す
+                    </button>
                   </div>
                 </div>
               ))

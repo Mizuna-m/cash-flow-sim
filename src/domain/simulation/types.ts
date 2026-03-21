@@ -13,6 +13,9 @@ export type SimulationEvent = {
   amount: string;
   orderIndex: number;
   cardId?: string | null;
+  accountId?: string | null;
+  fromAccountId?: string | null;
+  toAccountId?: string | null;
   source?: "actual" | "forecast";
   label?: string;
   detail?: string;
@@ -52,6 +55,13 @@ export type DailySimulationSnapshot = {
   actualBalance: string;
   short: boolean;
   cardBalances: Record<string, string>;
+  liquidAccountBalances: Array<{
+    accountId: string;
+    name: string;
+    type: "cash" | "bank";
+    balance: string;
+  }>;
+  negativeLiquidAccountIds: string[];
   eventSummary: DailyEventSummary;
   events: DailyEventExplanation[];
 };
@@ -63,5 +73,11 @@ export type SimulationInput = {
   defaultCardId: string;
   initialTheoreticalBalance: string;
   initialActualBalance: string;
+  liquidAccounts: Array<{
+    id: string;
+    name: string;
+    type: "cash" | "bank";
+    initialBalance: string;
+  }>;
   events: SimulationEvent[];
 };

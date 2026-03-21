@@ -129,6 +129,68 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /api/credit-cards/{id}:
+    patch:
+      tags: [CreditCards]
+      summary: Update credit card
+      operationId: updateCreditCard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidLike"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditCardUpdateRequest"
+      responses:
+        "200":
+          description: Updated credit card
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [creditCard]
+                properties:
+                  creditCard:
+                    $ref: "#/components/schemas/CreditCard"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [CreditCards]
+      summary: Delete credit card
+      operationId: deleteCreditCard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UuidLike"
+      responses:
+        "200":
+          description: Deleted credit card
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [creditCard]
+                properties:
+                  creditCard:
+                    $ref: "#/components/schemas/CreditCard"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/transactions:
     get:
       tags: [Transactions]
@@ -674,10 +736,34 @@ components:
           type: boolean
           default: false
 
+    CreditCardUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        closingDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+        paymentDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+        settlementAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        isDefault:
+          type: boolean
+
     Transaction:
       type: object
       required:
-        [id, date, amount, tags, cardId, memo, orderIndex, createdAt, updatedAt]
+        [id, date, amount, accountId, tags, cardId, memo, orderIndex, createdAt, updatedAt]
       properties:
         id:
           $ref: "#/components/schemas/UuidLike"
@@ -687,6 +773,10 @@ components:
         amount:
           type: string
           description: Signed decimal string
+        accountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
         tags:
           $ref: "#/components/schemas/JsonTags"
         cardId:
@@ -714,6 +804,10 @@ components:
           oneOf:
             - type: string
             - type: number
+        accountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
         tags:
           $ref: "#/components/schemas/JsonTags"
         cardId:
@@ -731,7 +825,7 @@ components:
     ScheduledEvent:
       type: object
       required:
-        [id, name, startDate, endDate, recurrenceRule, amount, tags, cardId, isActive, orderIndex, createdAt, updatedAt]
+        [id, name, startDate, endDate, recurrenceRule, amount, accountId, tags, cardId, isActive, orderIndex, createdAt, updatedAt]
       properties:
         id:
           $ref: "#/components/schemas/UuidLike"
@@ -751,6 +845,10 @@ components:
             - type: "null"
         amount:
           type: string
+        accountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
         tags:
           $ref: "#/components/schemas/JsonTags"
         cardId:
@@ -789,6 +887,10 @@ components:
           oneOf:
             - type: string
             - type: number
+        accountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
         tags:
           $ref: "#/components/schemas/JsonTags"
         cardId:
@@ -922,7 +1024,17 @@ components:
     DailySimulationSnapshot:
       type: object
       required:
-        [date, theoreticalBalance, actualBalance, short, cardBalances, eventSummary, events]
+        [
+          date,
+          theoreticalBalance,
+          actualBalance,
+          short,
+          cardBalances,
+          liquidAccountBalances,
+          negativeLiquidAccountIds,
+          eventSummary,
+          events
+        ]
       properties:
         date:
           type: string
@@ -937,12 +1049,34 @@ components:
           type: object
           additionalProperties:
             type: string
+        liquidAccountBalances:
+          type: array
+          items:
+            $ref: "#/components/schemas/LiquidAccountBalance"
+        negativeLiquidAccountIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/UuidLike"
         eventSummary:
           $ref: "#/components/schemas/DailyEventSummary"
         events:
           type: array
           items:
             $ref: "#/components/schemas/DailyEventExplanation"
+
+    LiquidAccountBalance:
+      type: object
+      required: [accountId, name, type, balance]
+      properties:
+        accountId:
+          $ref: "#/components/schemas/UuidLike"
+        name:
+          type: string
+        type:
+          type: string
+          enum: [cash, bank]
+        balance:
+          type: string
 
     DailyEventSummary:
       type: object

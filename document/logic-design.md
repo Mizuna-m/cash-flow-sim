@@ -38,6 +38,7 @@
 * 日次理論残高
 * 日次現実残高
 * カード残高
+* 口座別の現金系残高（cash / bank）
 * ショート判定
 
 ---
@@ -56,6 +57,7 @@
 theoretical_balance = initial_balance
 actual_balance = initial_balance
 card_balance[card_id] = 初期値（通常0）
+liquid_account_balance[account_id] = cash / bank の初期残高
 ```
 
 ---
@@ -87,9 +89,12 @@ for date in simulation_range:
 if event.type == "expense":
     theoretical_balance -= event.amount
 
-    card = resolve_card(event)
-
-    card_balance[card] += event.amount
+    if event.card_id is not null:
+        card = resolve_card(event)
+        card_balance[card] += event.amount
+    else:
+        actual_balance -= event.amount
+        liquid_account_balance[event.account_id] -= event.amount
 ```
 
 ---
@@ -100,6 +105,7 @@ if event.type == "expense":
 if event.type == "income":
     theoretical_balance += event.amount
     actual_balance += event.amount
+    liquid_account_balance[event.account_id] += event.amount
 ```
 
 ---
@@ -110,6 +116,8 @@ if event.type == "income":
 if event.type == "transfer":
     actual_balance += event.in_amount
     actual_balance -= event.out_amount
+    liquid_account_balance[to_account] += event.amount
+    liquid_account_balance[from_account] -= event.amount
 ```
 
 ※ 理論残高は変化しない
@@ -122,6 +130,7 @@ if event.type == "transfer":
 if event.type == "card_payment":
     actual_balance -= event.amount
     card_balance[event.card_id] -= event.amount
+    liquid_account_balance[source_account_id] -= event.amount
 ```
 
 ---
@@ -132,8 +141,11 @@ if event.type == "card_payment":
 if event.type == "scheduled_expense":
     theoretical_balance -= event.amount
 
-    card = resolve_card(event)
-    card_balance[card] += event.amount
+    if event.card_id is not null:
+        card = resolve_card(event)
+        card_balance[card] += event.amount
+    else:
+        liquid_account_balance[event.account_id] -= event.amount
 ```
 
 ---
@@ -157,7 +169,19 @@ if event.type == "forecast_expense":
 if event.type == "card_payment_forecast":
     actual_balance -= event.amount
     card_balance[event.card_id] -= event.amount
+    liquid_account_balance[settlement_account_id] -= event.amount
 ```
+
+---
+
+### 6.8 口座不足判定
+
+```
+if exists liquid_account_balance[account_id] < 0:
+    short = true
+```
+
+総額がプラスでも、cash / bank のいずれかがマイナスなら不足扱いとする。
 
 ---
 

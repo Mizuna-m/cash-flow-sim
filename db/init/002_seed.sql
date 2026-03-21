@@ -26,12 +26,13 @@ VALUES
   )
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO transactions (id, date, amount, tags, card_id, memo, order_index)
+INSERT INTO transactions (id, date, amount, account_id, tags, card_id, memo, order_index)
 VALUES
   (
     '44444444-4444-4444-4444-444444444441',
     DATE '2026-03-01',
     280000,
+    '11111111-1111-1111-1111-111111111111',
     '{"category":["給与"],"project":[]}'::jsonb,
     NULL,
     'Monthly salary',
@@ -41,6 +42,7 @@ VALUES
     '44444444-4444-4444-4444-444444444442',
     DATE '2026-03-02',
     -3200,
+    '11111111-1111-1111-1111-111111111111',
     '{"category":["食費"],"project":[]}'::jsonb,
     NULL,
     'Groceries',
@@ -50,6 +52,7 @@ VALUES
     '44444444-4444-4444-4444-444444444443',
     DATE '2026-03-05',
     -45000,
+    NULL,
     '{"category":["旅行"],"project":["春の旅行"]}'::jsonb,
     '33333333-3333-3333-3333-333333333333',
     'Travel booking',
@@ -57,7 +60,7 @@ VALUES
   )
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO scheduled_events (id, name, start_date, recurrence_rule, amount, tags, card_id, is_active, order_index)
+INSERT INTO scheduled_events (id, name, start_date, recurrence_rule, amount, account_id, tags, card_id, is_active, order_index)
 VALUES
   (
     '55555555-5555-5555-5555-555555555551',
@@ -65,6 +68,7 @@ VALUES
     DATE '2026-03-27',
     'FREQ=MONTHLY',
     -85000,
+    '11111111-1111-1111-1111-111111111111',
     '{"category":["家賃"],"project":[]}'::jsonb,
     NULL,
     TRUE,
@@ -76,6 +80,7 @@ VALUES
     DATE '2026-03-04',
     NULL,
     -9000,
+    NULL,
     '{"category":["ガジェット"],"project":["forecast-demo"]}'::jsonb,
     '33333333-3333-3333-3333-333333333334',
     TRUE,
@@ -87,6 +92,7 @@ VALUES
     DATE '2026-04-02',
     NULL,
     -18000,
+    NULL,
     '{"category":["家電"],"project":["forecast-demo"]}'::jsonb,
     '33333333-3333-3333-3333-333333333334',
     TRUE,
@@ -98,6 +104,7 @@ VALUES
     DATE '2026-04-18',
     NULL,
     -42000,
+    '11111111-1111-1111-1111-111111111111',
     '{"category":["保険"],"project":["forecast-demo"]}'::jsonb,
     NULL,
     TRUE,
@@ -109,12 +116,43 @@ VALUES
     DATE '2026-04-24',
     NULL,
     -16000,
+    '22222222-2222-2222-2222-222222222222',
     '{"category":["娯楽"],"project":["forecast-demo"]}'::jsonb,
     NULL,
     TRUE,
     4
   )
 ON CONFLICT (id) DO NOTHING;
+
+UPDATE transactions
+SET account_id = CASE id
+  WHEN '44444444-4444-4444-4444-444444444441' THEN '11111111-1111-1111-1111-111111111111'::uuid
+  WHEN '44444444-4444-4444-4444-444444444442' THEN '11111111-1111-1111-1111-111111111111'::uuid
+  WHEN '44444444-4444-4444-4444-444444444443' THEN NULL
+  ELSE account_id
+END
+WHERE id IN (
+  '44444444-4444-4444-4444-444444444441',
+  '44444444-4444-4444-4444-444444444442',
+  '44444444-4444-4444-4444-444444444443'
+);
+
+UPDATE scheduled_events
+SET account_id = CASE id
+  WHEN '55555555-5555-5555-5555-555555555551' THEN '11111111-1111-1111-1111-111111111111'::uuid
+  WHEN '55555555-5555-5555-5555-555555555556' THEN NULL
+  WHEN '55555555-5555-5555-5555-555555555554' THEN NULL
+  WHEN '55555555-5555-5555-5555-555555555553' THEN '11111111-1111-1111-1111-111111111111'::uuid
+  WHEN '55555555-5555-5555-5555-555555555555' THEN '22222222-2222-2222-2222-222222222222'::uuid
+  ELSE account_id
+END
+WHERE id IN (
+  '55555555-5555-5555-5555-555555555551',
+  '55555555-5555-5555-5555-555555555556',
+  '55555555-5555-5555-5555-555555555554',
+  '55555555-5555-5555-5555-555555555553',
+  '55555555-5555-5555-5555-555555555555'
+);
 
 INSERT INTO balance_events (id, date, from_account_id, to_account_id, amount, memo, order_index)
 VALUES

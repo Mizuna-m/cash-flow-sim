@@ -4,6 +4,7 @@ export type TransactionRecord = {
   id: string;
   date: string;
   amount: string;
+  accountId: string | null;
   tags: Record<string, unknown>;
   cardId: string | null;
   memo: string;
@@ -16,6 +17,7 @@ type TransactionRow = {
   id: string;
   date: string;
   amount: string;
+  account_id: string | null;
   tags: Record<string, unknown>;
   card_id: string | null;
   memo: string;
@@ -29,6 +31,7 @@ function mapTransaction(row: TransactionRow): TransactionRecord {
     id: row.id,
     date: row.date,
     amount: row.amount,
+    accountId: row.account_id,
     tags: row.tags,
     cardId: row.card_id,
     memo: row.memo,
@@ -59,6 +62,7 @@ export async function listTransactions(filters?: { startDate?: string; endDate?:
         id,
         date::text,
         amount::text,
+        account_id::text,
         tags,
         card_id::text,
         memo,
@@ -78,6 +82,7 @@ export async function listTransactions(filters?: { startDate?: string; endDate?:
 export async function createTransaction(input: {
   date: string;
   amount: string;
+  accountId?: string | null;
   tags: Record<string, unknown>;
   cardId?: string | null;
   memo?: string;
@@ -85,12 +90,13 @@ export async function createTransaction(input: {
 }) {
   const result = await dbPool.query<TransactionRow>(
     `
-      INSERT INTO transactions (date, amount, tags, card_id, memo, order_index)
-      VALUES ($1::date, $2::numeric, $3::jsonb, $4::uuid, $5, $6)
+      INSERT INTO transactions (date, amount, account_id, tags, card_id, memo, order_index)
+      VALUES ($1::date, $2::numeric, $3::uuid, $4::jsonb, $5::uuid, $6, $7)
       RETURNING
         id,
         date::text,
         amount::text,
+        account_id::text,
         tags,
         card_id::text,
         memo,
@@ -101,6 +107,7 @@ export async function createTransaction(input: {
     [
       input.date,
       input.amount,
+      input.accountId ?? null,
       JSON.stringify(input.tags),
       input.cardId ?? null,
       input.memo ?? "",
@@ -120,6 +127,7 @@ export async function deleteTransaction(id: string) {
         id,
         date::text,
         amount::text,
+        account_id::text,
         tags,
         card_id::text,
         memo,
