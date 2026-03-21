@@ -259,7 +259,6 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
       meta: "平均/日"
     }
   ];
-
   async function handleRangeSubmit(formData: FormData) {
     const range = {
       startDate: String(formData.get("startDate") ?? ""),
@@ -390,7 +389,7 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
   }
 
   return (
-    <section className="wire-panel wire-section">
+    <section className="wire-panel wire-section wire-simulation-refined">
       <div className="wire-section-head">
         <div>
           <h2 className="wire-section-title">判断ビュー</h2>
@@ -405,9 +404,9 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
         </form>
       </div>
 
-      <div className="wire-kpi-grid wire-kpi-grid-six">
+      <div className="wire-kpi-grid wire-kpi-grid-six wire-simulation-kpis">
         {kpis.map((item) => (
-          <div key={item.label} className="wire-stat">
+          <div key={item.label} className="wire-stat wire-simulation-kpi">
             <div className="wire-stat-k">{item.label}</div>
             <div className="wire-stat-v">{item.value}</div>
             <div className="wire-stat-m">{item.meta}</div>
@@ -538,12 +537,12 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                 <div className="wire-row-sub">{scenario.detail}</div>
               </button>
             ))}
-            <div className="wire-list-item">
-              <div className="wire-list-top">
+            <div className="wire-list-item wire-manual-compare">
+              <div className="wire-list-top wire-manual-compare-head">
                 <div className="wire-row-title">手動比較</div>
                 <div className="wire-row-action">{selectedScenarioIds.length}件選択</div>
               </div>
-              <div className="wire-row-sub">
+              <div className="wire-row-sub wire-manual-compare-copy">
                 チェックした予定を外した比較を作ります。
               </div>
               <div className="wire-select-list">
@@ -557,12 +556,12 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                         checked={selectedScenarioIds.includes(event.id)}
                         onChange={() => toggleScenarioSelection(event.id)}
                       />
-                      <span>
-                        <strong>{event.name}</strong>
-                        <span className="wire-row-sub">
+                      <div className="wire-select-copy">
+                        <div className="wire-select-title">{event.name}</div>
+                        <div className="wire-row-sub wire-select-meta">
                           {event.startDate} / {formatCurrency(event.amount)}
-                        </span>
-                      </span>
+                        </div>
+                      </div>
                     </label>
                   ))
                 )}

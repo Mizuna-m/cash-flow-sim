@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cash Flow Simulator Wireframe v4</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe6;
+        --sheet: rgba(255, 252, 246, 0.84);
+        --panel: #fffdf8;
+        --panel-muted: #f6f0e7;
+        --line: rgba(33, 42, 52, 0.14);
+        --line-strong: rgba(33, 42, 52, 0.24);
+        --ink: #18232d;
+        --muted: #68737d;
+        --blue: #2d68c4;
+        --green: #4c765c;
+        --red: #bf5e4c;
+        --shadow: 0 20px 44px rgba(24, 35, 45, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(45, 104, 196, 0.08), transparent 24%),
+          radial-gradient(circle at 86% 10%, rgba(191, 94, 76, 0.08), transparent 22%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          "Avenir Next",
+          "Hiragino Sans",
+          "Hiragino Kaku Gothic ProN",
+          "Yu Gothic",
+          sans-serif;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(24, 35, 45, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(24, 35, 45, 0.03) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent 80%);
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: min(1540px, calc(100vw - 28px));
+        margin: 16px auto 40px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .sheet {
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 28px;
+        background: var(--sheet);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .topbar {
+        padding: 20px 24px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: center;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.56);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 14px 0 0;
+        font-size: clamp(34px, 4vw, 54px);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+      }
+
+      .lead {
+        max-width: 840px;
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.9;
+      }
+
+      .nav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: end;
+      }
+
+      .nav a,
+      .chip,
+      .button,
+      .tab {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.58);
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .nav a.active,
+      .button,
+      .tab.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: white;
+      }
+
+      .hero {
+        padding: 0 24px 22px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.55fr);
+        gap: 18px;
+      }
+
+      .hero-main {
+        border-top: 1px solid var(--line);
+        padding-top: 18px;
+      }
+
+      .hero-kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .kpi {
+        min-height: 94px;
+        padding: 10px 0 0;
+        border-top: 1px solid var(--line-strong);
+      }
+
+      .kpi .label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .kpi .value {
+        margin-top: 10px;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+
+      .kpi .meta {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .hero-note {
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.64);
+        padding: 18px;
+      }
+
+      .hero-note h2 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+      }
+
+      .hero-note p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+
+      .hero-note ul {
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .hero-note li {
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(340px, 0.7fr);
+        gap: 18px;
+      }
+
+      .section {
+        padding: 22px 24px 24px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .section-title {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+      }
+
+      .section-meta {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .chart-shell {
+        overflow: hidden;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(246, 240, 231, 0.72));
+      }
+
+      .chart-topline {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .legend span::before {
+        content: "";
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        margin-right: 7px;
+        border-radius: 999px;
+      }
+
+      .legend .a::before {
+        background: var(--blue);
+      }
+
+      .legend .b::before {
+        background: var(--green);
+      }
+
+      .legend .c::before {
+        background: var(--red);
+      }
+
+      .chart {
+        position: relative;
+        height: 320px;
+        background:
+          linear-gradient(to top, rgba(24, 35, 45, 0.04) 1px, transparent 1px) 0 0 / 100% 20%,
+          linear-gradient(to right, rgba(24, 35, 45, 0.03) 1px, transparent 1px) 0 0 / 10% 100%;
+      }
+
+      .chart svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .callout {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 164px;
+        border-radius: 16px;
+        border: 1px solid rgba(191, 94, 76, 0.28);
+        background: rgba(255, 251, 248, 0.92);
+        padding: 12px;
+        color: #874234;
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .event-rail {
+        display: grid;
+      }
+
+      .row {
+        display: grid;
+        gap: 12px;
+        padding: 14px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .row:first-child {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      .event-row {
+        grid-template-columns: 118px minmax(0, 1fr) auto;
+        align-items: start;
+      }
+
+      .row-date {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .row-title {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .row-note {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .row-amount {
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .danger {
+        color: var(--red);
+      }
+
+      .safe {
+        color: var(--green);
+      }
+
+      .side-stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .composer {
+        padding: 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .composer-head {
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .composer-head h3 {
+        margin: 10px 0 0;
+        font-size: 24px;
+        letter-spacing: -0.03em;
+      }
+
+      .composer-head p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 14px 0 0;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .field,
+      .field-wide {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field-wide {
+        grid-column: 1 / -1;
+      }
+
+      .field label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .input {
+        min-height: 46px;
+        border: none;
+        border-bottom: 1px solid var(--line-strong);
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+      }
+
+      .input.fake {
+        display: flex;
+        align-items: center;
+        padding: 0 0 4px;
+        color: rgba(24, 35, 45, 0.62);
+      }
+
+      .composer-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+      }
+
+      .button {
+        cursor: default;
+      }
+
+      .rules {
+        padding: 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.56);
+      }
+
+      .rules h3 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+      }
+
+      .rules ol {
+        margin: 14px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+
+      .ledger {
+        padding: 22px 24px 24px;
+      }
+
+      .ledger-head {
+        display: grid;
+        grid-template-columns: 118px 92px minmax(0, 1fr) 120px 88px;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line-strong);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 118px 92px minmax(0, 1fr) 120px 88px;
+        gap: 12px;
+        align-items: start;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+      }
+
+      .ledger-row:last-child {
+        border-bottom: none;
+      }
+
+      .ghost {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .annotation {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.75;
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-kpi-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 780px) {
+        .page {
+          width: min(100%, calc(100vw - 16px));
+          margin: 8px auto 24px;
+          gap: 12px;
+        }
+
+        .topbar,
+        .section,
+        .ledger {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+
+        .topbar {
+          grid-template-columns: 1fr;
+        }
+
+        .nav {
+          justify-content: start;
+        }
+
+        .hero {
+          padding: 0 16px 16px;
+        }
+
+        .hero-kpi-strip,
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head,
+        .composer-actions {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .event-row,
+        .ledger-head,
+        .ledger-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="sheet">
+        <div class="topbar">
+          <div>
+            <span class="eyebrow">Cash Flow Simulator / direction v4</span>
+            <h1>カードを減らして、<br />台帳と作業面を主役に戻す。</h1>
+            <p class="lead">
+              この案では「全部をカードで囲う」のをやめて、普段の情報は区切り線ベースで並べます。
+              強い面は hero、composer、危険通知だけに限定して、他は行の密度で見せる構成にします。
+            </p>
+          </div>
+          <nav class="nav">
+            <a class="active">Simulation</a>
+            <a>Forecast</a>
+            <a>Ledger</a>
+            <a>Settings</a>
+          </nav>
+        </div>
+
+        <div class="hero">
+          <div class="hero-main">
+            <div class="hero-kpi-strip">
+              <div class="kpi">
+                <div class="label">Lowest Balance</div>
+                <div class="value">-¥24,000</div>
+                <div class="meta">2026-03-29</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Short Days</div>
+                <div class="value">2 days</div>
+                <div class="meta">actual basis</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Next Card</div>
+                <div class="value">¥81,200</div>
+                <div class="meta">2026-03-27</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Forecast Start</div>
+                <div class="value">3/25</div>
+                <div class="meta">after actuals</div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="hero-note">
+            <h2>Visual Rules</h2>
+            <p>
+              強い背景面は「判断」か「入力」だけ。情報確認は薄い背景と罫線で済ませ、面を増やさない。
+            </p>
+            <ul>
+              <li>数字はカードで囲わず、上端ルール付きの KPI strip で扱う</li>
+              <li>イベント一覧は list row 化して、1件ごとの箱を作らない</li>
+              <li>操作フォームだけを 1 つの strong surface に寄せる</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="sheet workspace">
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Simulation Workspace</h2>
+              <p class="section-meta">
+                左は残高の判断、下は根拠イベント。チャートと一覧を同じ文法で扱い、どちらも「箱の中の箱」にならないようにしています。
+              </p>
+            </div>
+            <div class="toolbar">
+              <span class="chip">Range 2026-03-01 - 2026-04-05</span>
+              <span class="chip">actual + forecast</span>
+              <span class="button">Run compare</span>
+            </div>
+          </div>
+
+          <div class="chart-shell">
+            <div class="chart-topline">
+              <div class="legend">
+                <span class="a">Theoretical</span>
+                <span class="b">Actual</span>
+                <span class="c">Risk marker</span>
+              </div>
+              <div class="annotation">Chart は 1枚の面。横にサマリー箱を増やさない。</div>
+            </div>
+            <div class="chart">
+              <svg viewBox="0 0 1000 320" preserveAspectRatio="none" aria-hidden="true">
+                <polyline
+                  fill="none"
+                  stroke="#2d68c4"
+                  stroke-width="4"
+                  points="30,60 120,62 210,86 340,90 460,104 590,150 730,158 860,164 970,170"
+                />
+                <polyline
+                  fill="none"
+                  stroke="#4c765c"
+                  stroke-width="4"
+                  points="30,50 120,50 210,86 340,86 460,86 590,88 730,88 860,130 970,130"
+                />
+                <line
+                  x1="730"
+                  y1="0"
+                  x2="730"
+                  y2="320"
+                  stroke="#bf5e4c"
+                  stroke-width="2"
+                  stroke-dasharray="8 8"
+                />
+              </svg>
+              <div class="callout">
+                3/29 に actual がマイナス。<br />
+                まずは家賃とカード引落の重なりを疑う。
+              </div>
+            </div>
+          </div>
+
+          <div style="height: 18px"></div>
+
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Impact Timeline</h2>
+              <p class="section-meta">カードではなく、台帳寄りの row 表現でイベントを積みます。</p>
+            </div>
+            <div class="toolbar">
+              <span class="chip">Future outflows</span>
+              <span class="chip">Forecast basis</span>
+            </div>
+          </div>
+
+          <div class="event-rail">
+            <div class="row event-row">
+              <div class="row-date">2026-03-27</div>
+              <div>
+                <div class="row-title">楽天カード引落</div>
+                <div class="row-note">source: card payment / settlement: Main Bank / fixed event</div>
+              </div>
+              <div class="row-amount danger">-¥81,200</div>
+            </div>
+            <div class="row event-row">
+              <div class="row-date">2026-03-29</div>
+              <div>
+                <div class="row-title">家賃</div>
+                <div class="row-note">source: scheduled event / recurrence: monthly / project: home</div>
+              </div>
+              <div class="row-amount danger">-¥85,000</div>
+            </div>
+            <div class="row event-row">
+              <div class="row-date">2026-03-30</div>
+              <div>
+                <div class="row-title">日常支出 forecast</div>
+                <div class="row-note">basis: past 28 days / average 1日あたり ¥2,400</div>
+              </div>
+              <div class="row-amount danger">-¥2,400</div>
+            </div>
+            <div class="row event-row">
+              <div class="row-date">2026-04-01</div>
+              <div>
+                <div class="row-title">給与</div>
+                <div class="row-note">source: scheduled event / actual とズレたら要調整</div>
+              </div>
+              <div class="row-amount safe">+¥320,000</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="section">
+          <div class="side-stack">
+            <div class="composer">
+              <div class="composer-head">
+                <span class="eyebrow">Single Strong Surface</span>
+                <h3>Quick Entry Composer</h3>
+                <p>
+                  入力面だけを“ちゃんとした箱”にします。左タブ列のカード群はやめて、上部 tab と下部フォームに圧縮します。
+                </p>
+              </div>
+
+              <div class="tabs">
+                <span class="tab active">Transaction</span>
+                <span class="tab">Scheduled</span>
+                <span class="tab">Balance</span>
+                <span class="tab">Card</span>
+              </div>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label>Date</label>
+                  <div class="input fake">2026-03-22</div>
+                </div>
+                <div class="field">
+                  <label>Amount</label>
+                  <div class="input fake">-2,500</div>
+                </div>
+                <div class="field">
+                  <label>Description</label>
+                  <div class="input fake">Lunch</div>
+                </div>
+                <div class="field">
+                  <label>Payee</label>
+                  <div class="input fake">FamilyMart</div>
+                </div>
+                <div class="field-wide field">
+                  <label>Category / Project / Note</label>
+                  <div class="input fake">食費 / ふだん / 補足メモ</div>
+                </div>
+              </div>
+
+              <div class="composer-actions">
+                <span class="button">Add transaction</span>
+                <span class="annotation">補足メッセージは toast か 1 行 status に限定</span>
+              </div>
+            </div>
+
+            <div class="rules">
+              <h3>Component Direction</h3>
+              <ol>
+                <li>`surface-strong`: composer, confirm, alert だけに使う</li>
+                <li>`surface-soft`: chart shell や grouped section にだけ使う</li>
+                <li>`row-item`: ledger, events, account list の標準形にする</li>
+                <li>`pill`: filter と state のみ。説明文の代替として多用しない</li>
+              </ol>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="sheet ledger">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Ledger Table</h2>
+            <p class="section-meta">
+              台帳も 1 行ごとに囲わず、罫線テーブルに戻します。編集や削除を行の右端に置くことで、一覧そのものを主役にします。
+            </p>
+          </div>
+          <div class="toolbar">
+            <span class="chip">Search: rent</span>
+            <span class="ghost">Only active</span>
+          </div>
+        </div>
+
+        <div class="ledger-head">
+          <div>Date</div>
+          <div>Kind</div>
+          <div>Detail</div>
+          <div>Amount</div>
+          <div>Action</div>
+        </div>
+        <div class="ledger-row">
+          <div>2026-03-29</div>
+          <div>scheduled</div>
+          <div>
+            <div class="row-title">家賃</div>
+            <div class="row-note">Main Bank / FREQ=MONTHLY</div>
+          </div>
+          <div class="row-amount danger">-¥85,000</div>
+          <div><span class="ghost">Disable</span></div>
+        </div>
+        <div class="ledger-row">
+          <div>2026-03-27</div>
+          <div>card</div>
+          <div>
+            <div class="row-title">楽天カード引落</div>
+            <div class="row-note">Rakuten Card / Main Bank</div>
+          </div>
+          <div class="row-amount danger">-¥81,200</div>
+          <div><span class="ghost">Delete</span></div>
+        </div>
+        <div class="ledger-row">
+          <div>2026-03-22</div>
+          <div>transaction</div>
+          <div>
+            <div class="row-title">コンビニ昼食</div>
+            <div class="row-note">FamilyMart / 食費 &gt; 外食費</div>
+          </div>
+          <div class="row-amount danger">-¥2,500</div>
+          <div><span class="ghost">Delete</span></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

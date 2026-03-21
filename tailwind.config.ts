@@ -15,7 +15,15 @@ const config: Config = {
         brass: "#b98a3b"
       },
       fontFamily: {
-        sans: ["'Avenir Next'", "'Hiragino Sans'", "sans-serif"]
+        sans: [
+          "'IBM Plex Sans JP'",
+          "'Inter'",
+          "'Hiragino Sans'",
+          "'Hiragino Kaku Gothic ProN'",
+          "'Yu Gothic UI'",
+          "'Meiryo'",
+          "sans-serif"
+        ]
       },
       boxShadow: {
         panel: "0 20px 45px rgba(19, 33, 43, 0.12)"

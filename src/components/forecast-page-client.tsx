@@ -38,7 +38,7 @@ export function ForecastPageClient({ initialData }: { initialData: DashboardPayl
   const forecastTableMinWidth = 800 + accountColumns.length * 150;
 
   return (
-    <section className="wire-panel wire-section">
+    <section className="wire-panel wire-section wire-forecast-refined">
       <div className="wire-section-head">
         <div>
           <h2 className="wire-section-title">日次一覧テーブル</h2>

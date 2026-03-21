@@ -20,8 +20,11 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family:
+    "IBM Plex Sans JP",
+    "Inter",
     "Hiragino Sans",
     "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI",
     "Yu Gothic",
     "Meiryo",
     sans-serif;
@@ -29,6 +32,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0)),
     var(--page-texture, transparent);
+  font-feature-settings: "tnum" 1;
   letter-spacing: 0.01em;
 }
 
@@ -665,22 +669,22 @@ a {
   width: min(1560px, calc(100vw - 28px));
   margin: 14px auto 36px;
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .wire-panel {
   background: #fffdf9;
   border: 1px solid #d7d0c4;
-  border-radius: 22px;
+  border-radius: 16px;
   box-shadow: 0 16px 38px rgba(23, 33, 43, 0.07);
 }
 
 .wire-top {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 16px;
+  gap: 24px;
   align-items: center;
-  padding: 18px 20px;
+  padding: 22px 24px;
 }
 
 .wire-main-title {
@@ -780,15 +784,15 @@ a {
 }
 
 .wire-section {
-  padding: 18px 20px 20px;
+  padding: 22px 24px 24px;
 }
 
 .wire-section-head {
   display: flex;
   justify-content: space-between;
   align-items: end;
-  gap: 16px;
-  margin-bottom: 14px;
+  gap: 24px;
+  margin-bottom: 18px;
 }
 
 .wire-section-title {
@@ -810,7 +814,7 @@ a {
 .wire-stat {
   padding: 14px;
   border: 1px solid #d7d0c4;
-  border-radius: 16px;
+  border-radius: 10px;
   background: #f7f3ec;
 }
 
@@ -827,30 +831,32 @@ a {
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 .wire-stat-m {
   margin-top: 4px;
   color: #6d7780;
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .wire-sim-layout-large {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.42fr) minmax(280px, 0.55fr);
-  gap: 14px;
+  gap: 20px;
 }
 
 .wire-sim-layout-split {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.62fr);
-  gap: 14px;
+  gap: 20px;
   align-items: start;
 }
 
 .wire-sim-main-column {
   display: grid;
-  gap: 14px;
+  gap: 18px;
   min-width: 0;
 }
 
@@ -862,30 +868,30 @@ a {
 .wire-forecast-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 14px;
+  gap: 18px;
 }
 
 .wire-entry-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 430px;
-  gap: 14px;
+  gap: 18px;
 }
 
 .wire-settings-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-  gap: 14px;
+  gap: 18px;
 }
 
 .wire-settings-column {
   display: grid;
-  gap: 14px;
+  gap: 18px;
   align-content: start;
 }
 
 .wire-box {
-  border: 1px dashed #bdb4a4;
-  border-radius: 18px;
+  border: 1px solid #d7d0c4;
+  border-radius: 10px;
   background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(247,243,236,0.75));
 }
 
@@ -893,7 +899,7 @@ a {
 .wire-summary-panel,
 .wire-risk-panel,
 .wire-form-panel {
-  padding: 14px;
+  padding: 18px;
 }
 
 .wire-risk-panel {
@@ -918,8 +924,8 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .wire-form-toolbar {
@@ -952,10 +958,10 @@ a {
   min-width: 0;
   min-height: 420px;
   height: 420px;
-  border: 1px dashed #bdb4a4;
-  border-radius: 16px;
+  border: 1px solid #d7d0c4;
+  border-radius: 10px;
   background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(247,243,236,0.82));
-  padding: 8px;
+  padding: 12px;
 }
 
 .wire-chart-area-lg .recharts-responsive-container {
@@ -1023,6 +1029,23 @@ a {
 
 .wire-select-item input {
   margin-top: 3px;
+}
+
+.wire-select-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wire-select-title {
+  display: block;
+  padding-right: 10px;
+}
+
+.wire-select-meta {
+  display: block;
+  padding-left: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .wire-inline-actions {
@@ -1191,7 +1214,7 @@ a {
   width: 100%;
   min-width: 0;
   min-height: 50px;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 12px 14px;
   background: #f7f3ec;
 }
@@ -1204,7 +1227,7 @@ a {
 .wire-search-field {
   width: 100%;
   min-height: 44px;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid #d7d0c4;
   background: #f7f3ec;
   color: #17212b;
@@ -1226,7 +1249,7 @@ a {
   min-height: 50px;
   justify-content: flex-start;
   gap: 10px;
-  border-radius: 14px;
+  border-radius: 8px;
   color: #17212b;
   line-height: 1.45;
   padding: 10px 14px;
@@ -1276,10 +1299,285 @@ a {
 .wire-flash {
   margin-top: 12px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 8px;
   background: #eef5ee;
   color: #4f7d60;
   font-size: 14px;
+}
+
+.wire-simulation-refined .wire-kpi-grid {
+  gap: 18px;
+  margin-bottom: 22px;
+  border-top: 0;
+}
+
+.wire-simulation-refined .wire-stat {
+  border: 0;
+  border-radius: 8px;
+  background: rgba(247, 243, 236, 0.42);
+  padding: 14px 16px;
+}
+
+.wire-simulation-refined .wire-stat:last-child {
+  border-right: 0;
+}
+
+.wire-simulation-refined .wire-stat-k {
+  letter-spacing: 0.08em;
+}
+
+.wire-simulation-refined .wire-stat-v {
+  margin-top: 12px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+
+.wire-simulation-refined .wire-box {
+  border-radius: 8px;
+  border-color: rgba(215, 208, 196, 0.45);
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.5));
+}
+
+.wire-simulation-refined .wire-chart-box {
+  border-style: solid;
+}
+
+.wire-simulation-refined .wire-chart-area-lg {
+  border-color: rgba(215, 208, 196, 0.42);
+  background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(247,243,236,0.6));
+}
+
+.wire-simulation-refined .wire-risk-panel .wire-list {
+  gap: 14px;
+}
+
+.wire-simulation-refined .wire-risk-panel .wire-list-item,
+.wire-simulation-refined .wire-risk-panel .wire-list-item-button {
+  border: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 4px;
+}
+
+.wire-simulation-refined .wire-risk-panel .wire-list-item:last-child,
+.wire-simulation-refined .wire-risk-panel .wire-list-item-button:last-child {
+  border-bottom: 0;
+}
+
+.wire-simulation-refined .wire-risk-panel .wire-list-item-selected {
+  background: transparent;
+  border-color: #d7d0c4;
+}
+
+.wire-simulation-refined .wire-risk-panel .wire-select-item {
+  border: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 14px 12px 6px;
+}
+
+.wire-simulation-refined .wire-risk-panel .wire-select-item:last-child {
+  border-bottom: 0;
+}
+
+.wire-simulation-refined .wire-manual-compare {
+  padding-top: 2px;
+}
+
+.wire-simulation-refined .wire-manual-compare-head {
+  margin-bottom: 2px;
+}
+
+.wire-simulation-refined .wire-manual-compare-copy {
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.wire-simulation-refined .wire-manual-compare .wire-select-list {
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.wire-simulation-refined .wire-manual-compare .wire-select-item {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.wire-simulation-refined .wire-manual-compare .wire-select-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wire-simulation-refined .wire-manual-compare .wire-select-meta {
+  font-size: 12px;
+}
+
+.wire-simulation-refined .wire-inline-chip {
+  background: #fffdfa;
+}
+
+.wire-forecast-refined .wire-box {
+  border-color: rgba(215, 208, 196, 0.45);
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.5));
+}
+
+.wire-forecast-refined .wire-actions {
+  gap: 10px;
+}
+
+.wire-forecast-refined .wire-pill,
+.wire-forecast-refined .wire-inline-chip {
+  border-color: rgba(215, 208, 196, 0.75);
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.wire-forecast-refined .wire-table-header-forecast-dense {
+  padding: 0 12px 10px;
+}
+
+.wire-forecast-refined .wire-table-row-forecast-dense {
+  padding: 12px 12px;
+  border-bottom-color: rgba(215, 208, 196, 0.62);
+}
+
+.wire-forecast-refined .wire-event-note {
+  line-height: 1.55;
+}
+
+.wire-ledger-refined .wire-table {
+  gap: 0;
+}
+
+.wire-ledger-refined .wire-table-row-ledger {
+  border: 0;
+  border-bottom: 1px solid rgba(215, 208, 196, 0.68);
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 8px;
+}
+
+.wire-ledger-refined .wire-table-row-ledger:first-child {
+  border-top: 1px solid rgba(215, 208, 196, 0.68);
+}
+
+.wire-ledger-refined .wire-form-panel {
+  border-color: rgba(215, 208, 196, 0.45);
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.5));
+}
+
+.wire-ledger-refined .wire-form-toolbar,
+.wire-settings-refined .wire-form-toolbar {
+  margin-bottom: 14px;
+}
+
+.wire-ledger-refined .wire-tabs {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.wire-ledger-refined .wire-form-panel form,
+.wire-settings-refined .wire-form-panel form {
+  gap: 16px;
+}
+
+.wire-ledger-refined .wire-form-grid,
+.wire-settings-refined .wire-form-grid {
+  gap: 14px 16px;
+}
+
+.wire-ledger-refined .wire-check,
+.wire-ledger-refined .wire-input,
+.wire-ledger-refined .wire-search-field,
+.wire-settings-refined .wire-check,
+.wire-settings-refined .wire-input,
+.wire-settings-refined .wire-search-field {
+  border: 1px solid rgba(215, 208, 196, 0.9);
+  border-radius: 6px;
+  background: rgba(255, 253, 249, 0.88);
+  box-shadow: inset 0 -1px 0 rgba(215, 208, 196, 0.6);
+}
+
+.wire-ledger-refined .wire-input,
+.wire-ledger-refined .wire-search-field,
+.wire-settings-refined .wire-input,
+.wire-settings-refined .wire-search-field {
+  min-height: 46px;
+  padding-inline: 14px;
+}
+
+.wire-ledger-refined .wire-check,
+.wire-settings-refined .wire-check {
+  min-height: 46px;
+  padding: 12px 14px;
+}
+
+.wire-ledger-refined .wire-input::placeholder,
+.wire-ledger-refined .wire-search-field::placeholder,
+.wire-settings-refined .wire-input::placeholder,
+.wire-settings-refined .wire-search-field::placeholder {
+  color: #7a847f;
+}
+
+.wire-ledger-refined .wire-form-actions,
+.wire-settings-refined .wire-form-actions {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(215, 208, 196, 0.65);
+}
+
+.wire-ledger-refined .wire-form-actions .wire-small-button,
+.wire-settings-refined .wire-form-actions .wire-small-button {
+  min-height: 34px;
+}
+
+.wire-settings-refined .wire-form-panel {
+  border-color: rgba(215, 208, 196, 0.45);
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.5));
+}
+
+.wire-settings-refined .wire-form-grid-settings {
+  gap: 14px;
+}
+
+.wire-settings-refined .wire-box-head {
+  margin-bottom: 16px;
+}
+
+.wire-settings-refined .wire-list {
+  gap: 0;
+}
+
+.wire-settings-refined .wire-list-item,
+.wire-settings-refined .wire-list-item-button {
+  border: 0;
+  border-bottom: 1px solid rgba(215, 208, 196, 0.68);
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 4px;
+}
+
+.wire-settings-refined .wire-list-item:first-child,
+.wire-settings-refined .wire-list-item-button:first-child {
+  padding-top: 4px;
+}
+
+.wire-settings-refined .wire-list-item:last-child,
+.wire-settings-refined .wire-list-item-button:last-child {
+  border-bottom: 0;
+  padding-bottom: 4px;
+}
+
+.wire-settings-refined .wire-list-item-selected {
+  background: rgba(238, 244, 255, 0.55);
+}
+
+.wire-settings-refined .wire-box {
+  border-color: rgba(215, 208, 196, 0.45);
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.5));
 }
 
 .wire-modal-backdrop {

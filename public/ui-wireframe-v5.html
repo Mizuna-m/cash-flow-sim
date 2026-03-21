@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cash Flow Simulator Wireframe v5</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3efe7;
+        --paper: #fffdf8;
+        --paper-soft: #f7f2e9;
+        --line: rgba(22, 31, 39, 0.16);
+        --line-strong: rgba(22, 31, 39, 0.3);
+        --ink: #161f27;
+        --muted: #66707a;
+        --blue: #2c63b8;
+        --green: #486f59;
+        --red: #b85b49;
+        --shadow: 0 18px 40px rgba(22, 31, 39, 0.08);
+        --radius-button: 999px;
+        --radius-panel: 8px;
+        --font-sans:
+          "IBM Plex Sans JP",
+          "Inter",
+          "Hiragino Sans",
+          "Yu Gothic UI",
+          sans-serif;
+        --font-number:
+          "Inter",
+          "IBM Plex Sans JP",
+          "Hiragino Sans",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+          var(--bg);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-feature-settings: "palt" 0, "tnum" 1;
+        letter-spacing: 0.01em;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(22, 31, 39, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(22, 31, 39, 0.03) 1px, transparent 1px);
+        background-size: 28px 28px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 78%);
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: min(1520px, calc(100vw - 28px));
+        margin: 16px auto 36px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .shell,
+      .panel {
+        background: rgba(255, 253, 248, 0.88);
+        border: 1px solid rgba(255, 255, 255, 0.76);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .shell {
+        border-radius: 16px;
+      }
+
+      .panel {
+        border-radius: var(--radius-panel);
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: end;
+        padding: 20px 22px 16px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.52);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 14px 0 0;
+        font-size: clamp(34px, 4vw, 52px);
+        line-height: 1.05;
+        letter-spacing: -0.045em;
+        font-weight: 700;
+      }
+
+      .lead {
+        max-width: 900px;
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.9;
+      }
+
+      .nav,
+      .toolbar,
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .nav {
+        justify-content: end;
+      }
+
+      .pill,
+      .button,
+      .tab {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 13px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-button);
+        background: rgba(255, 255, 255, 0.6);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .button,
+      .tab.active,
+      .nav .active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: white;
+      }
+
+      .hero {
+        padding: 0 22px 22px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.6fr);
+        gap: 18px;
+      }
+
+      .hero-main {
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .kpi {
+        padding-top: 10px;
+        border-top: 2px solid var(--line-strong);
+      }
+
+      .kpi .label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .kpi .value {
+        margin-top: 10px;
+        font-family: var(--font-number);
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.05em;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .kpi .meta {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .note-box {
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-panel);
+        background: rgba(255, 255, 255, 0.56);
+      }
+
+      .note-box h2 {
+        margin: 0;
+        font-size: 17px;
+        letter-spacing: -0.02em;
+      }
+
+      .note-box p,
+      .note-box li {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .note-box ul {
+        margin: 12px 0 0;
+        padding-left: 18px;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.28fr) minmax(340px, 0.72fr);
+        gap: 16px;
+      }
+
+      .section {
+        padding: 20px 22px 22px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .section-title {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.035em;
+        line-height: 1.08;
+      }
+
+      .section-meta {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .chart-shell {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-panel);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.64), rgba(247, 242, 233, 0.82));
+        overflow: hidden;
+      }
+
+      .chart-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .legend span::before {
+        content: "";
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        margin-right: 7px;
+      }
+
+      .legend .a::before {
+        background: var(--blue);
+      }
+
+      .legend .b::before {
+        background: var(--green);
+      }
+
+      .legend .c::before {
+        background: var(--red);
+      }
+
+      .chart {
+        position: relative;
+        height: 318px;
+        background:
+          linear-gradient(to top, rgba(22, 31, 39, 0.04) 1px, transparent 1px) 0 0 / 100% 20%,
+          linear-gradient(to right, rgba(22, 31, 39, 0.03) 1px, transparent 1px) 0 0 / 10% 100%;
+      }
+
+      .chart svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .alert-box {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 170px;
+        padding: 12px;
+        border: 1px solid rgba(184, 91, 73, 0.28);
+        border-radius: var(--radius-panel);
+        background: rgba(255, 251, 248, 0.94);
+        color: #864033;
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .rows {
+        border-top: 1px solid var(--line);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 116px minmax(0, 1fr) 120px;
+        gap: 12px;
+        align-items: start;
+        padding: 13px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .date {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .title {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+      }
+
+      .sub {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .amount {
+        justify-self: end;
+        font-family: var(--font-number);
+        font-size: 15px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+      }
+
+      .danger {
+        color: var(--red);
+      }
+
+      .safe {
+        color: var(--green);
+      }
+
+      .side {
+        display: grid;
+        gap: 16px;
+      }
+
+      .composer {
+        padding: 18px;
+      }
+
+      .composer-head {
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .composer-head h3 {
+        margin: 10px 0 0;
+        font-size: 23px;
+        letter-spacing: -0.03em;
+      }
+
+      .composer-head p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .field,
+      .field-wide {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field-wide {
+        grid-column: 1 / -1;
+      }
+
+      .field label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .input {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--line-strong);
+        color: rgba(22, 31, 39, 0.66);
+        font-size: 14px;
+      }
+
+      .number-input {
+        font-family: var(--font-number);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .composer-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+      }
+
+      .annotation {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .rules {
+        padding: 18px;
+      }
+
+      .rules h3 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .rules ol {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
+      }
+
+      .ledger {
+        padding: 20px 22px 22px;
+      }
+
+      .ledger-head,
+      .ledger-row {
+        display: grid;
+        grid-template-columns: 116px 84px minmax(0, 1fr) 120px 86px;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .ledger-head {
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line-strong);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .ledger-row {
+        padding: 13px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+      }
+
+      .ghost {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-button);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .kpi-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 780px) {
+        .page {
+          width: min(100%, calc(100vw - 16px));
+          margin: 8px auto 24px;
+          gap: 12px;
+        }
+
+        .topbar,
+        .section,
+        .ledger {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+
+        .topbar {
+          grid-template-columns: 1fr;
+        }
+
+        .nav {
+          justify-content: start;
+        }
+
+        .hero {
+          padding: 0 16px 16px;
+        }
+
+        .kpi-strip,
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head,
+        .composer-actions,
+        .row,
+        .ledger-head,
+        .ledger-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="shell">
+        <div class="topbar">
+          <div>
+            <span class="tag">Direction v5 / strict radius</span>
+            <h1>丸いのは操作だけ。<br />面と文字はもっと硬くする。</h1>
+            <p class="lead">
+              AIっぽく見える要因のひとつは、情報面まで全部が同じ優しさで丸いことです。
+              この案では、パネルや表はほぼ角を立て、丸いのは button, tab, filter に限定します。
+              あわせて和欧混植を締め、数字は tabular 前提で別扱いにします。
+            </p>
+          </div>
+          <nav class="nav">
+            <span class="pill active">Simulation</span>
+            <span class="pill">Forecast</span>
+            <span class="pill">Ledger</span>
+            <span class="pill">Settings</span>
+          </nav>
+        </div>
+
+        <div class="hero">
+          <div class="hero-main">
+            <div class="kpi-strip">
+              <div class="kpi">
+                <div class="label">Lowest Balance</div>
+                <div class="value">-¥24,000</div>
+                <div class="meta">2026-03-29</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Short Days</div>
+                <div class="value">02</div>
+                <div class="meta">actual basis</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Next Card</div>
+                <div class="value">¥81,200</div>
+                <div class="meta">2026-03-27</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Forecast Start</div>
+                <div class="value">03/25</div>
+                <div class="meta">after actuals</div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="note-box">
+            <h2>Why This Feels Less AI</h2>
+            <ul>
+              <li>情報面を丸めすぎないので、装飾より構造が先に見える</li>
+              <li>和文本文と欧文ラベルの調子を近づけて、混植のノイズを減らす</li>
+              <li>金額と日付だけ数字用の組み方に切り替えて、表の精度感を出す</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="shell workspace">
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Simulation Workspace</h2>
+              <p class="section-meta">
+                パネルは角を立て、情報のまとまりは余白と罫線で作ります。
+                角丸でグルーピングするのではなく、ヘッダ、境界線、数字の整列で読ませる案です。
+              </p>
+            </div>
+            <div class="toolbar">
+              <span class="pill">2026-03-01 to 2026-04-05</span>
+              <span class="pill">actual + forecast</span>
+              <span class="button">Run compare</span>
+            </div>
+          </div>
+
+          <div class="panel chart-shell">
+            <div class="chart-top">
+              <div class="legend">
+                <span class="a">Theoretical</span>
+                <span class="b">Actual</span>
+                <span class="c">Risk</span>
+              </div>
+              <div class="annotation">side summary card は置かず、注記は chart 内に薄く入れる</div>
+            </div>
+            <div class="chart">
+              <svg viewBox="0 0 1000 318" preserveAspectRatio="none" aria-hidden="true">
+                <polyline
+                  fill="none"
+                  stroke="#2c63b8"
+                  stroke-width="4"
+                  points="30,58 125,60 210,84 340,90 470,103 600,148 735,156 870,164 970,170"
+                />
+                <polyline
+                  fill="none"
+                  stroke="#486f59"
+                  stroke-width="4"
+                  points="30,48 125,48 210,84 340,84 470,84 600,86 735,86 870,128 970,128"
+                />
+                <line
+                  x1="735"
+                  y1="0"
+                  x2="735"
+                  y2="318"
+                  stroke="#b85b49"
+                  stroke-width="2"
+                  stroke-dasharray="8 8"
+                />
+              </svg>
+              <div class="alert-box">
+                3/29 に actual がマイナス。<br />
+                家賃とカード引落の重なりを先に確認。
+              </div>
+            </div>
+          </div>
+
+          <div style="height: 16px"></div>
+
+          <div class="rows">
+            <div class="row">
+              <div class="date">2026-03-27</div>
+              <div>
+                <div class="title">楽天カード引落</div>
+                <div class="sub">card payment / Main Bank / fixed event</div>
+              </div>
+              <div class="amount danger">-¥81,200</div>
+            </div>
+            <div class="row">
+              <div class="date">2026-03-29</div>
+              <div>
+                <div class="title">家賃</div>
+                <div class="sub">scheduled event / recurrence monthly / home</div>
+              </div>
+              <div class="amount danger">-¥85,000</div>
+            </div>
+            <div class="row">
+              <div class="date">2026-03-30</div>
+              <div>
+                <div class="title">日常支出 forecast</div>
+                <div class="sub">basis past 28 days / average ¥2,400</div>
+              </div>
+              <div class="amount danger">-¥2,400</div>
+            </div>
+            <div class="row">
+              <div class="date">2026-04-01</div>
+              <div>
+                <div class="title">給与</div>
+                <div class="sub">scheduled event / incoming cash</div>
+              </div>
+              <div class="amount safe">+¥320,000</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="section">
+          <div class="side">
+            <div class="panel composer">
+              <div class="composer-head">
+                <span class="tag">Interactive Surface</span>
+                <h3>Quick Entry Composer</h3>
+                <p>
+                  ここだけ少しプロダクト感を出してよく、だからボタンやタブだけ丸くします。
+                  入力欄は下線主体にして、フォーム自体をふわっと見せすぎないようにしています。
+                </p>
+              </div>
+
+              <div class="tabs" style="margin-top:14px">
+                <span class="tab active">Transaction</span>
+                <span class="tab">Scheduled</span>
+                <span class="tab">Balance</span>
+                <span class="tab">Card</span>
+              </div>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label>Date</label>
+                  <div class="input number-input">2026-03-22</div>
+                </div>
+                <div class="field">
+                  <label>Amount</label>
+                  <div class="input number-input">-2,500</div>
+                </div>
+                <div class="field">
+                  <label>Description</label>
+                  <div class="input">Lunch</div>
+                </div>
+                <div class="field">
+                  <label>Payee</label>
+                  <div class="input">FamilyMart</div>
+                </div>
+                <div class="field-wide field">
+                  <label>Category / Project / Note</label>
+                  <div class="input">食費 / ふだん / 補足メモ</div>
+                </div>
+              </div>
+
+              <div class="composer-actions">
+                <span class="button">Add transaction</span>
+                <span class="annotation">角丸はこの種の操作要素だけに残す</span>
+              </div>
+            </div>
+
+            <div class="panel rules">
+              <h3>Typography Rules</h3>
+              <ol>
+                <li>本文は和文寄りの sans。英数字だけ別フォントに逃がしすぎない</li>
+                <li>KPI, amount, date は `tabular-nums` を必須にする</li>
+                <li>ラベルは全部 uppercase にせず、小さい欧文は必要箇所だけに絞る</li>
+                <li>和文本文は行間広め、数値は詰め気味でコントラストを作る</li>
+              </ol>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="shell ledger">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Ledger Table</h2>
+            <p class="section-meta">
+              一覧は完全に table 文法へ戻し、削除や無効化だけを丸ボタンにします。
+              情報自体は四角い世界、操作だけ丸い世界という切り分けです。
+            </p>
+          </div>
+          <div class="toolbar">
+            <span class="pill">Search: rent</span>
+            <span class="pill">Only active</span>
+          </div>
+        </div>
+
+        <div class="ledger-head">
+          <div>Date</div>
+          <div>Kind</div>
+          <div>Detail</div>
+          <div>Amount</div>
+          <div>Action</div>
+        </div>
+        <div class="ledger-row">
+          <div class="date">2026-03-29</div>
+          <div>scheduled</div>
+          <div>
+            <div class="title">家賃</div>
+            <div class="sub">Main Bank / FREQ=MONTHLY</div>
+          </div>
+          <div class="amount danger">-¥85,000</div>
+          <div><span class="ghost">Disable</span></div>
+        </div>
+        <div class="ledger-row">
+          <div class="date">2026-03-27</div>
+          <div>card</div>
+          <div>
+            <div class="title">楽天カード引落</div>
+            <div class="sub">Rakuten Card / Main Bank</div>
+          </div>
+          <div class="amount danger">-¥81,200</div>
+          <div><span class="ghost">Delete</span></div>
+        </div>
+        <div class="ledger-row">
+          <div class="date">2026-03-22</div>
+          <div>transaction</div>
+          <div>
+            <div class="title">コンビニ昼食</div>
+            <div class="sub">FamilyMart / 食費 &gt; 外食費</div>
+          </div>
+          <div class="amount danger">-¥2,500</div>
+          <div><span class="ghost">Delete</span></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

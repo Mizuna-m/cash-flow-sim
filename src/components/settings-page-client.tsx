@@ -161,7 +161,7 @@ export function SettingsPageClient({ initialData }: { initialData: DashboardPayl
   }
 
   return (
-    <section className="wire-panel wire-section">
+    <section className="wire-panel wire-section wire-settings-refined">
       <ConfirmDialog
         open={isDeleteDialogOpen}
         title="カード削除の確認"

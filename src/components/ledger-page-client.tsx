@@ -301,7 +301,7 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
   }
 
   return (
-    <section className="wire-panel wire-section">
+    <section className="wire-panel wire-section wire-ledger-refined">
       <ConfirmDialog
         open={pendingActionItem !== null}
         title={
