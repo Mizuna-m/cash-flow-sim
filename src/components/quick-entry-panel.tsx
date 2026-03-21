@@ -38,6 +38,13 @@ function toTagList(value: string) {
     .filter(Boolean);
 }
 
+function toPathList(value: string) {
+  return value
+    .split("/")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 async function postJson(path: string, body: unknown) {
   const response = await fetch(path, {
     method: "POST",
@@ -286,11 +293,15 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
                     await postJson("/api/transactions", {
                       date: String(formData.get("date") ?? ""),
                       amount: String(formData.get("amount") ?? ""),
-                      memo: String(formData.get("memo") ?? ""),
+                      payee: String(formData.get("payee") ?? ""),
+                      payeeDetail: toPathList(String(formData.get("payeeDetail") ?? "")),
+                      description: String(formData.get("description") ?? ""),
+                      note: String(formData.get("note") ?? ""),
+                      categoryPath: toPathList(String(formData.get("categoryPath") ?? "")),
                       orderIndex: Number(formData.get("orderIndex") ?? 0),
                       tags: {
-                        category: toTagList(String(formData.get("category") ?? "")),
-                        project: toTagList(String(formData.get("project") ?? ""))
+                        project: toTagList(String(formData.get("project") ?? "")),
+                        custom: toTagList(String(formData.get("tagList") ?? ""))
                       }
                     });
                     form.reset();
@@ -331,15 +342,27 @@ export function QuickEntryPanel({ accounts, creditCards }: QuickEntryPanelProps)
                   />
                 </Field>
               </div>
-              <Field label="Memo">
-                <input name="memo" placeholder="Lunch or salary" className={fieldClassName()} />
+              <Field label="Description">
+                <input name="description" placeholder="Lunch or salary" className={fieldClassName()} />
               </Field>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Category" hint="カンマ区切り">
-                  <input name="category" placeholder="食費, 交通費" className={fieldClassName()} />
+                <Field label="Payee">
+                  <input name="payee" placeholder="FamilyMart" className={fieldClassName()} />
+                </Field>
+                <Field label="Payee detail" hint="/ 区切り">
+                  <input name="payeeDetail" placeholder="箱崎店 / FamilyMart" className={fieldClassName()} />
+                </Field>
+                <Field label="Category path" hint="/ 区切り">
+                  <input name="categoryPath" placeholder="食費 / 外食費" className={fieldClassName()} />
                 </Field>
                 <Field label="Project" hint="任意">
                   <input name="project" placeholder="春の旅行" className={fieldClassName()} />
+                </Field>
+                <Field label="Tags" hint="カンマ区切り">
+                  <input name="tagList" placeholder="立替, 要確認" className={fieldClassName()} />
+                </Field>
+                <Field label="Note">
+                  <input name="note" placeholder="補足メモ" className={fieldClassName()} />
                 </Field>
               </div>
               <Field label="Order index" hint="同日内の順序">

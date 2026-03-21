@@ -44,19 +44,33 @@
 * id (PK)
 * date
 * amount（+収入 / -支出）
-* tags（JSONB） ← ★変更
+* payee
+* payee_detail（JSONB, 階層パス）
+* description
+* note
+* category_path（JSONB, 階層パス）
+* tags（JSONB, project / custom など補助タグ）
 * card_id（nullable）
-* memo
 * created_at
 * order_index
 
 ---
 
-#### tags例
+#### 役割分担
+
+* `payee`: 取引先の主名称
+* `payee_detail`: 店舗や媒体など、取引先詳細の階層
+* `description`: 内容。従来の `memo` より責務を狭くする
+* `note`: 備考。検索補助ではなく本文補足
+* `category_path`: `["食費","外食費"]` のような分類階層
+* `tags`: project や custom のような自由タグ
+
+---
+
+#### 例
 
 ```json
 {
-  "category": ["交通費", "旅行"],
   "project": ["箱根旅行"],
   "custom": ["立替", "仕事"]
 }

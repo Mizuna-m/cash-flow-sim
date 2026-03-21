@@ -81,6 +81,7 @@ MVPでは、受け入れ条件と業務ルールから逆算して、以下を�
 * 支出は負、収入は正
 * 支払手段は必須入力にしない
 * `card_id` は任意とし、未指定時は `default_card` に割り当てる
+* `Transaction` の主情報は `description / payee / payee_detail / note / category_path` に分け、`tags` は `project` や `custom` など補助検索用に絞る
 
 ### 4.2 残高モデル
 
@@ -193,7 +194,7 @@ Next.js App Router
 完了条件:
 
 * 基本CRUDが API 経由で操作できる
-* 日付、金額、`order_index`、タグ JSON が保存できる
+* 日付、金額、`order_index`、`payee`、`payee_detail`、`description`、`note`、`category_path`、補助タグ JSON が保存できる
 
 ### Phase 3: シミュレーションコア
 

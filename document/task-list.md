@@ -68,6 +68,7 @@ Status の意味:
 * transaction / scheduled event に口座紐付けを追加し、現金系口座別残高を simulation に載せる変更を進めている
 * 現在の simulation は指定期間ごとに初期残高から再計算する実装であり、長期運用時の計算コスト対策は未着手
 * 既存実績データの標準列が `日付・取引先・取引先詳細・内容・金額・備考・種別・プロジェクト` であることを確認した
+* Transaction は `payee / payee_detail / description / note / category_path` を主列として持ち、`tags` は `project / custom` など補助検索用に絞る方針へ更新した
 
 次に着手するべきこと:
 
@@ -106,7 +107,7 @@ Status の意味:
 | T04 | PostgreSQL 接続層追加 | DONE | T03 | アプリからDB接続確認できる |
 | T05 | DB アクセス方法の選定と導入 | DONE | T04 | 当面は SQL + `scripts/run-sql.mjs` で適用する |
 | T06 | Account / CreditCard スキーマ作成 | DONE | T05 | 初期残高とカード設定が保存できる |
-| T07 | Transaction スキーマ作成 | DONE | T05 | amount, tags, card_id, order_index を保存できる |
+| T07 | Transaction スキーマ作成 | DONE | T05 | amount, payee, payee_detail, description, note, category_path, tags, card_id, order_index を保存できる |
 | T08 | ScheduledEvent / BalanceEvent / CardPayment スキーマ作成 | DONE | T05 | 各イベントが保存できる |
 | T09 | seed データセット作成 | DOING | T06,T07,T08 | 主要ケースを1回で投入でき、実 DB に適用済み |
 | T10 | イベント正規化ロジック実装 | DOING | T09 | Transaction / ScheduledEvent / BalanceEvent / CardPayment を simulation 用に変換できる |

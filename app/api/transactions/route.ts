@@ -10,9 +10,13 @@ const transactionInputSchema = z.object({
   date: z.string().min(1),
   amount: z.union([z.string(), z.number()]).transform((value) => String(value)),
   accountId: postgresUuidSchema.nullable().optional(),
+  payee: z.string().default(""),
+  payeeDetail: z.array(z.string()).default([]),
+  description: z.string().default(""),
+  note: z.string().default(""),
+  categoryPath: z.array(z.string()).default([]),
   tags: z.record(z.string(), z.unknown()).default({}),
   cardId: postgresUuidSchema.nullable().optional(),
-  memo: z.string().default(""),
   orderIndex: z.number().int().nonnegative().default(0)
 });
 

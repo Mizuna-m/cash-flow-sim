@@ -48,9 +48,13 @@ export type Transaction = {
   date: string;
   amount: string;
   accountId: string | null;
+  payee: string;
+  payeeDetail: string[];
+  description: string;
+  note: string;
+  categoryPath: string[];
   tags: JsonTags;
   cardId: string | null;
-  memo: string;
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
@@ -217,9 +221,13 @@ export type TransactionCreateRequest = {
   date: string;
   amount: string;
   accountId?: string | null;
+  payee?: string;
+  payeeDetail?: string[];
+  description?: string;
+  note?: string;
+  categoryPath?: string[];
   tags?: JsonTags;
   cardId?: string | null;
-  memo?: string;
   orderIndex?: number;
 };
 

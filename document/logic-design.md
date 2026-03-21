@@ -33,6 +33,17 @@
 
 ---
 
+### 2.4 Transactionの構造
+
+* `payee` は取引先の主名称
+* `payee_detail` は店舗や媒体などの階層パス
+* `description` は取引内容の主説明
+* `note` は備考
+* `category_path` は `["食費", "外食費"]` のような分類階層
+* `tags` は `project` や `custom` など検索補助の自由タグに限定する
+
+---
+
 ## 3. 出力
 
 * 日次理論残高

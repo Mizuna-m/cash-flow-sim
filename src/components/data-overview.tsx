@@ -123,7 +123,7 @@ export async function DataOverview() {
             <div className="mt-4 space-y-3">
               {transactions.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-ink/15 bg-sand/35 px-5 py-6 text-sm leading-7 text-ink/60">
-                  Transaction を追加すると、ここに日付・メモ・金額が並びます。
+                  Transaction を追加すると、ここに日付・内容・取引先・金額が並びます。
                 </div>
               ) : (
                 transactions.slice(0, 6).map((transaction) => {
@@ -136,12 +136,11 @@ export async function DataOverview() {
                     >
                       <p className="font-medium text-ink">{transaction.date}</p>
                       <div>
-                        <p className="text-ink">{transaction.memo || "No memo"}</p>
+                        <p className="text-ink">{transaction.description || transaction.payee || "No description"}</p>
                         <p className="mt-1 text-sm text-ink/52">
-                          {Array.isArray(transaction.tags.category) &&
-                          transaction.tags.category.length > 0
-                            ? transaction.tags.category.join(", ")
-                            : "untagged"}
+                          {[transaction.payee, transaction.categoryPath.join(" > ")]
+                            .filter(Boolean)
+                            .join(" / ") || "uncategorized"}
                         </p>
                       </div>
                       <p

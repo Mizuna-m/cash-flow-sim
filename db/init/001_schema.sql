@@ -28,9 +28,13 @@ CREATE TABLE IF NOT EXISTS transactions (
   date DATE NOT NULL,
   amount NUMERIC(18, 2) NOT NULL,
   account_id UUID REFERENCES accounts(id),
+  payee TEXT NOT NULL DEFAULT '',
+  payee_detail JSONB NOT NULL DEFAULT '[]'::jsonb,
+  description TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
+  category_path JSONB NOT NULL DEFAULT '[]'::jsonb,
   tags JSONB NOT NULL DEFAULT '{}'::jsonb,
   card_id UUID REFERENCES credit_cards(id),
-  memo TEXT NOT NULL DEFAULT '',
   order_index INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -81,6 +85,38 @@ CREATE TABLE IF NOT EXISTS card_payments (
 ALTER TABLE transactions
   ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES accounts(id);
 
+ALTER TABLE transactions
+  ADD COLUMN IF NOT EXISTS payee TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE transactions
+  ADD COLUMN IF NOT EXISTS payee_detail JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'transactions'
+      AND column_name = 'memo'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'transactions'
+      AND column_name = 'description'
+  ) THEN
+    ALTER TABLE transactions RENAME COLUMN memo TO description;
+  END IF;
+END $$;
+
+ALTER TABLE transactions
+  ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE transactions
+  ADD COLUMN IF NOT EXISTS note TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE transactions
+  ADD COLUMN IF NOT EXISTS category_path JSONB NOT NULL DEFAULT '[]'::jsonb;
+
 ALTER TABLE scheduled_events
   ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES accounts(id);
 
@@ -89,6 +125,8 @@ CREATE INDEX IF NOT EXISTS idx_credit_cards_settlement_account_id ON credit_card
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_card_id ON transactions(card_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_payee ON transactions(payee);
+CREATE INDEX IF NOT EXISTS idx_transactions_category_path ON transactions USING GIN(category_path);
 CREATE INDEX IF NOT EXISTS idx_transactions_tags ON transactions USING GIN(tags);
 CREATE INDEX IF NOT EXISTS idx_scheduled_events_start_date ON scheduled_events(start_date);
 CREATE INDEX IF NOT EXISTS idx_scheduled_events_is_active ON scheduled_events(is_active);

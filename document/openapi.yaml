@@ -763,7 +763,7 @@ components:
     Transaction:
       type: object
       required:
-        [id, date, amount, accountId, tags, cardId, memo, orderIndex, createdAt, updatedAt]
+        [id, date, amount, accountId, payee, payeeDetail, description, note, categoryPath, tags, cardId, orderIndex, createdAt, updatedAt]
       properties:
         id:
           $ref: "#/components/schemas/UuidLike"
@@ -777,14 +777,26 @@ components:
           anyOf:
             - $ref: "#/components/schemas/UuidLike"
             - type: "null"
+        payee:
+          type: string
+        payeeDetail:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        note:
+          type: string
+        categoryPath:
+          type: array
+          items:
+            type: string
         tags:
           $ref: "#/components/schemas/JsonTags"
         cardId:
           anyOf:
             - $ref: "#/components/schemas/UuidLike"
             - type: "null"
-        memo:
-          type: string
         orderIndex:
           type: integer
           minimum: 0
@@ -808,15 +820,29 @@ components:
           anyOf:
             - $ref: "#/components/schemas/UuidLike"
             - type: "null"
+        payee:
+          type: string
+          default: ""
+        payeeDetail:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+          default: ""
+        note:
+          type: string
+          default: ""
+        categoryPath:
+          type: array
+          items:
+            type: string
         tags:
           $ref: "#/components/schemas/JsonTags"
         cardId:
           anyOf:
             - $ref: "#/components/schemas/UuidLike"
             - type: "null"
-        memo:
-          type: string
-          default: ""
         orderIndex:
           type: integer
           minimum: 0

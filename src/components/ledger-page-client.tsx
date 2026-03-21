@@ -43,6 +43,13 @@ function parseTagField(value: string) {
     .filter(Boolean);
 }
 
+function parsePathField(value: string) {
+  return value
+    .split("/")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function buildTags(category: string, project: string) {
   const tags: Record<string, unknown> = {};
   if (category.trim()) tags.category = parseTagField(category);
@@ -114,8 +121,15 @@ function buildLedgerItems(
       id: item.id,
       kind: "transaction" as const,
       date: item.date,
-      title: item.memo || "transaction",
-      detail: accountById.get(item.accountId ?? "") ?? "口座未指定",
+      title: item.description || item.payee || "transaction",
+      detail: [
+        accountById.get(item.accountId ?? "") ?? "口座未指定",
+        item.payee,
+        item.categoryPath.join(" > "),
+        item.note
+      ]
+        .filter(Boolean)
+        .join(" / "),
       amount: item.amount,
       actionLabel: "削除"
     })),
@@ -237,10 +251,17 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
       date: String(formData.get("date") ?? ""),
       amount: String(formData.get("amount") ?? ""),
       accountId: String(formData.get("accountId") ?? "") || null,
-      memo: String(formData.get("memo") ?? ""),
+      payee: String(formData.get("payee") ?? ""),
+      payeeDetail: parsePathField(String(formData.get("payeeDetail") ?? "")),
+      description: String(formData.get("description") ?? ""),
+      note: String(formData.get("note") ?? ""),
+      categoryPath: parsePathField(String(formData.get("categoryPath") ?? "")),
       orderIndex: Number(formData.get("orderIndex") ?? 0),
       cardId: String(formData.get("cardId") ?? "") || null,
-      tags: buildTags(String(formData.get("category") ?? ""), String(formData.get("project") ?? ""))
+      tags: {
+        ...buildTags("", String(formData.get("project") ?? "")),
+        custom: parseTagField(String(formData.get("tagList") ?? ""))
+      }
     };
     await postJson("/api/transactions", payload);
   }
@@ -418,9 +439,13 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
               <div className="wire-form-grid">
                 <input name="date" type="date" className="wire-input" defaultValue={data.simulation.startDate} autoFocus />
                 <input name="amount" type="number" step="0.01" className="wire-input" placeholder="金額" />
-                <input name="category" className="wire-input" placeholder="Category" />
+                <input name="description" className="wire-input" placeholder="内容" />
+                <input name="payee" className="wire-input" placeholder="取引先" />
+                <input name="payeeDetail" className="wire-input" placeholder="取引先詳細 / 区切り" />
+                <input name="categoryPath" className="wire-input" placeholder="種別階層 例: 食費 / 外食費" />
                 <input name="project" className="wire-input" placeholder="Project" />
-                <input name="memo" className="wire-input wire-input-wide" placeholder="メモ" />
+                <input name="tagList" className="wire-input" placeholder="自由タグ / カンマ区切り" />
+                <input name="note" className="wire-input wire-input-wide" placeholder="備考" />
                 <select name="accountId" className="wire-input" defaultValue="">
                   <option value="">口座未指定</option>
                   {data.accounts

@@ -23,9 +23,13 @@ type TransactionRow = {
   amount: string;
   account_id: string | null;
   account_name: string | null;
+  payee: string;
+  payee_detail: string[];
+  description: string;
+  note: string;
+  category_path: string[];
   tags: Record<string, unknown>;
   card_id: string | null;
-  memo: string;
   order_index: number;
 };
 
@@ -110,9 +114,13 @@ export async function loadSimulationSeedData(
             transactions.amount::text,
             transactions.account_id::text,
             accounts.name AS account_name,
+            transactions.payee,
+            transactions.payee_detail,
+            transactions.description,
+            transactions.note,
+            transactions.category_path,
             transactions.tags,
             transactions.card_id::text,
-            transactions.memo,
             transactions.order_index
           FROM transactions
           LEFT JOIN accounts

@@ -36,6 +36,14 @@ function getTagText(tags: Record<string, unknown>, key: string) {
   return values.filter((value): value is string => typeof value === "string").join(", ");
 }
 
+function compactJsonPath(path: unknown, separator = " / ") {
+  if (!Array.isArray(path) || path.length === 0) {
+    return "";
+  }
+
+  return path.filter((value): value is string => typeof value === "string").join(separator);
+}
+
 function compactDetail(parts: Array<string | null | undefined>) {
   return parts.map((part) => part?.trim()).filter(Boolean).join(" / ");
 }
@@ -65,12 +73,15 @@ function mapEvents(data: Awaited<ReturnType<typeof loadSimulationSeedData>>) {
       accountId: transaction.account_id,
       cardId: transaction.card_id,
       source: "actual",
-      label: transaction.memo || "実績",
+      label: transaction.description || transaction.payee || "実績",
       detail:
         compactDetail([
           transaction.account_name,
+          transaction.payee,
+          compactJsonPath(transaction.payee_detail),
+          compactJsonPath(transaction.category_path, " > "),
           getTagText(transaction.tags, "project"),
-          getTagText(transaction.tags, "category")
+          transaction.note
         ]) || "transaction"
     });
   }
