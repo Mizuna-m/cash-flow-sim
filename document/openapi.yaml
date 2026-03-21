@@ -16,6 +16,7 @@ servers:
 tags:
   - name: Health
   - name: Accounts
+  - name: CreditCards
   - name: Transactions
   - name: ScheduledEvents
   - name: BalanceEvents
@@ -75,6 +76,52 @@ paths:
                 properties:
                   account:
                     $ref: "#/components/schemas/Account"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/credit-cards:
+    get:
+      tags: [CreditCards]
+      summary: List credit cards
+      operationId: listCreditCards
+      responses:
+        "200":
+          description: Credit card list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [creditCards]
+                properties:
+                  creditCards:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CreditCard"
+    post:
+      tags: [CreditCards]
+      summary: Create credit card
+      operationId: createCreditCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditCardCreateRequest"
+      responses:
+        "201":
+          description: Created credit card
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [creditCard]
+                properties:
+                  creditCard:
+                    $ref: "#/components/schemas/CreditCard"
         "400":
           description: Validation error
           content:
@@ -568,6 +615,64 @@ components:
           oneOf:
             - type: string
             - type: number
+
+    CreditCard:
+      type: object
+      required:
+        [id, name, closingDay, paymentDay, settlementAccountId, currency, isDefault, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/UuidLike"
+        name:
+          type: string
+        closingDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+        paymentDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+        settlementAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    CreditCardCreateRequest:
+      type: object
+      required: [name, closingDay, paymentDay, currency]
+      properties:
+        name:
+          type: string
+        closingDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+        paymentDay:
+          type: integer
+          minimum: 1
+          maximum: 31
+        settlementAccountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        isDefault:
+          type: boolean
+          default: false
 
     Transaction:
       type: object

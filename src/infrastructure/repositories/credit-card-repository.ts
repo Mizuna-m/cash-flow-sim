@@ -58,3 +58,62 @@ export async function listCreditCards() {
 
   return result.rows.map(mapCreditCard);
 }
+
+export async function createCreditCard(input: {
+  name: string;
+  closingDay: number;
+  paymentDay: number;
+  settlementAccountId?: string | null;
+  currency: string;
+  isDefault?: boolean;
+}) {
+  const client = await dbPool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    if (input.isDefault) {
+      await client.query(`UPDATE credit_cards SET is_default = FALSE WHERE is_default = TRUE`);
+    }
+
+    const result = await client.query<CreditCardRow>(
+      `
+        INSERT INTO credit_cards (
+          name,
+          closing_day,
+          payment_day,
+          settlement_account_id,
+          currency,
+          is_default
+        )
+        VALUES ($1, $2, $3, $4::uuid, $5, $6)
+        RETURNING
+          id,
+          name,
+          closing_day,
+          payment_day,
+          settlement_account_id::text,
+          currency,
+          is_default,
+          created_at::text,
+          updated_at::text
+      `,
+      [
+        input.name,
+        input.closingDay,
+        input.paymentDay,
+        input.settlementAccountId ?? null,
+        input.currency,
+        input.isDefault ?? false
+      ]
+    );
+
+    await client.query("COMMIT");
+    return mapCreditCard(result.rows[0]);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

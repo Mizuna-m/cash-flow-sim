@@ -25,6 +25,15 @@ export type CreditCard = {
   updatedAt: string;
 };
 
+export type CreditCardCreateRequest = {
+  name: string;
+  closingDay: number;
+  paymentDay: number;
+  settlementAccountId?: string | null;
+  currency: string;
+  isDefault?: boolean;
+};
+
 export type Transaction = {
   id: string;
   date: string;

@@ -58,12 +58,14 @@ Status の意味:
 * 比較候補から ScheduledEvent を永続的に無効化する PATCH API と UI を追加済み
 * 台帳から Transaction / CardPayment / BalanceEvent を削除できるようにした
 * ScheduledEvent は台帳から無効化 / 再有効化できるようにした
+* Settings の credit card 追加を mock から実 API 接続へ更新した
 
 次に着手するべきこと:
 
 * forecast explanation を「どの実績から生成したか」まで結び付ける
 * simulation の差分比較 UI を手動シナリオ選択まで広げる
 * 各削除操作に確認 UI や soft-delete 方針が要るか判断する
+* credit card の更新・削除・default 切替を API 化する
 * API 変更時に OpenAPI も更新する運用を維持する
 
 ---
@@ -107,7 +109,7 @@ Status の意味:
 | T15 | 日常支出予測生成 | DONE | T09 | 実績欠損日に予測適用できる |
 | T16 | 実績優先ルール実装 | DONE | T14,T15 | 実績がある日には予測を抑制できる |
 | T17 | シミュレーション API | DONE | T12,T14,T15,T16 | 期間指定で結果を返せる |
-| T18 | CRUD API | DOING | T06,T07,T08 | create / list は主要系実装済み。実績系 delete と scheduled update も追加済み |
+| T18 | CRUD API | DOING | T06,T07,T08 | create / list は主要系実装済み。実績系 delete、scheduled update、credit card create を追加済み |
 | T19 | ダッシュボード画面 | DONE | T17 | 残高サマリが見える |
 | T20 | 取引入力画面 | DONE | T18 | Transaction 登録できる |
 | T21 | 予定入力画面 | DONE | T18 | ScheduledEvent 登録できる |

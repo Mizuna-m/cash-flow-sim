@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { AccountCreateRequest, DashboardPayload } from "@/src/lib/openapi-contract";
+import type {
+  AccountCreateRequest,
+  CreditCardCreateRequest,
+  DashboardPayload
+} from "@/src/lib/openapi-contract";
 
 async function postJson<T>(url: string, body: unknown) {
   const response = await fetch(url, {
@@ -16,6 +20,7 @@ async function postJson<T>(url: string, body: unknown) {
 
 export function SettingsPageClient({ initialData }: { initialData: DashboardPayload }) {
   const [accounts, setAccounts] = useState(initialData.accounts);
+  const [creditCards, setCreditCards] = useState(initialData.creditCards);
   const [flash, setFlash] = useState("");
 
   async function handleCreateAccount(formData: FormData) {
@@ -31,6 +36,32 @@ export function SettingsPageClient({ initialData }: { initialData: DashboardPayl
       setFlash("口座を追加しました。");
     } catch (error) {
       setFlash(error instanceof Error ? error.message : "追加に失敗しました");
+    }
+  }
+
+  async function handleCreateCreditCard(formData: FormData) {
+    try {
+      const payload: CreditCardCreateRequest = {
+        name: String(formData.get("name") ?? ""),
+        closingDay: Number(formData.get("closingDay") ?? 25),
+        paymentDay: Number(formData.get("paymentDay") ?? 10),
+        settlementAccountId: String(formData.get("settlementAccountId") ?? "") || null,
+        currency: String(formData.get("currency") ?? "JPY"),
+        isDefault: formData.get("isDefault") === "on"
+      };
+      const result = await postJson<{ creditCard: DashboardPayload["creditCards"][number] }>(
+        "/api/credit-cards",
+        payload
+      );
+      setCreditCards((current) => {
+        const next = payload.isDefault
+          ? current.map((card) => ({ ...card, isDefault: false }))
+          : current;
+        return [...next, result.creditCard];
+      });
+      setFlash("カードを追加しました。");
+    } catch (error) {
+      setFlash(error instanceof Error ? error.message : "カード追加に失敗しました");
     }
   }
 
@@ -89,22 +120,59 @@ export function SettingsPageClient({ initialData }: { initialData: DashboardPayl
         <div className="wire-box wire-form-panel">
           <div className="wire-box-head">
             <span className="wire-label">Cards</span>
-            <span className="wire-badge-mock">編集は Mock</span>
           </div>
+          <form action={handleCreateCreditCard}>
+            <div className="wire-form-grid wire-form-grid-settings">
+              <input name="name" className="wire-input" placeholder="カード名" />
+              <input
+                name="closingDay"
+                type="number"
+                min="1"
+                max="31"
+                defaultValue="25"
+                className="wire-input"
+                placeholder="締日"
+              />
+              <input
+                name="paymentDay"
+                type="number"
+                min="1"
+                max="31"
+                defaultValue="10"
+                className="wire-input"
+                placeholder="支払日"
+              />
+              <select name="settlementAccountId" className="wire-input" defaultValue="">
+                <option value="">引落口座未指定</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
+              <input name="currency" className="wire-input" defaultValue="JPY" />
+              <label className="wire-check">
+                <input name="isDefault" type="checkbox" />
+                default card にする
+              </label>
+            </div>
+            <div className="wire-form-actions">
+              <button type="submit" className="wire-button">カードを追加</button>
+            </div>
+          </form>
           <div className="wire-list">
-            {initialData.creditCards.map((card) => (
+            {creditCards.map((card) => (
               <div key={card.id} className="wire-list-item">
                 <div className="wire-list-top">
                   <div className="wire-row-title">{card.name}</div>
                   <div>{card.isDefault ? "default" : "card"}</div>
                 </div>
-                <div className="wire-row-sub">締日 {card.closingDay} / 支払日 {card.paymentDay}</div>
+                <div className="wire-row-sub">
+                  締日 {card.closingDay} / 支払日 {card.paymentDay} /{" "}
+                  {card.settlementAccountId ?? "引落口座未設定"}
+                </div>
               </div>
             ))}
-            <div className="wire-list-item">
-              <div className="wire-row-title">カード追加 / 更新 / 引落口座編集</div>
-              <div className="wire-row-sub">API 未提供のため UI は次フェーズで本実装</div>
-            </div>
           </div>
         </div>
       </div>
