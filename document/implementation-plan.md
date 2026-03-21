@@ -56,7 +56,7 @@ MVPでは、受け入れ条件と業務ルールから逆算して、以下を�
 ### 次点
 
 * Transaction / ScheduledEvent / CardPayment / BalanceEvent の CRUD
-* Project / Category タグ集計
+* Project / Category / Group 集計
 * シナリオ ON/OFF
 * 残高推移グラフ
 
@@ -82,12 +82,15 @@ MVPでは、受け入れ条件と業務ルールから逆算して、以下を�
 * 支払手段は必須入力にしない
 * `card_id` は任意とし、未指定時は `default_card` に割り当てる
 * `Transaction` の主情報は `description / payee / payee_detail / note / category_path` に分け、`tags` は `project` や `custom` など補助検索用に絞る
+* 大量入力を前提に、`payee` を軸にした `payee_detail / category_path / account / card / project` のサジェストと既定候補補完を入れる
+* サジェスト UI はキーボードだけで完結操作できることを前提にする
 
 ### 4.2 残高モデル
 
 * 理論残高は「発生ベース」
 * 現実残高は「口座残高ベース」
 * ショート判定は現実残高で行う
+* 残高の確認粒度は日次を基本とし、既存スプレッドシートの行単位 running balance をそのまま再現することは MVP の必須条件にしない
 
 ### 4.3 カード処理
 
@@ -247,7 +250,7 @@ Next.js App Router
 * 取引登録画面
 * 予定登録画面
 * シミュレーション結果画面
-* Project / Category 集計画面
+* Project / Category / Group 集計画面
 
 完了条件:
 
