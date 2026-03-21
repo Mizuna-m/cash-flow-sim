@@ -81,7 +81,8 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
       detail: "",
       amount: "-80.00",
       orderIndex: 1,
-      cardId: "default-card"
+      cardId: "default-card",
+      basis: undefined
     }
   ]);
 
@@ -116,7 +117,8 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
       detail: "",
       amount: "380.00",
       orderIndex: 1,
-      cardId: "main-card"
+      cardId: "main-card",
+      basis: undefined
     }
   ]);
 });

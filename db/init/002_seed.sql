@@ -14,6 +14,15 @@ VALUES
     '11111111-1111-1111-1111-111111111111',
     'JPY',
     TRUE
+  ),
+  (
+    '33333333-3333-3333-3333-333333333334',
+    'Forecast Demo Card',
+    5,
+    15,
+    '11111111-1111-1111-1111-111111111111',
+    'JPY',
+    FALSE
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -60,6 +69,50 @@ VALUES
     NULL,
     TRUE,
     1
+  ),
+  (
+    '55555555-5555-5555-5555-555555555556',
+    'Forecast Demo Headphones',
+    DATE '2026-03-04',
+    NULL,
+    -9000,
+    '{"category":["ガジェット"],"project":["forecast-demo"]}'::jsonb,
+    '33333333-3333-3333-3333-333333333334',
+    TRUE,
+    1
+  ),
+  (
+    '55555555-5555-5555-5555-555555555554',
+    'Forecast Demo Laptop',
+    DATE '2026-04-02',
+    NULL,
+    -18000,
+    '{"category":["家電"],"project":["forecast-demo"]}'::jsonb,
+    '33333333-3333-3333-3333-333333333334',
+    TRUE,
+    2
+  ),
+  (
+    '55555555-5555-5555-5555-555555555553',
+    'Forecast Demo Insurance',
+    DATE '2026-04-18',
+    NULL,
+    -42000,
+    '{"category":["保険"],"project":["forecast-demo"]}'::jsonb,
+    NULL,
+    TRUE,
+    3
+  ),
+  (
+    '55555555-5555-5555-5555-555555555555',
+    'Forecast Demo Concert',
+    DATE '2026-04-24',
+    NULL,
+    -16000,
+    '{"category":["娯楽"],"project":["forecast-demo"]}'::jsonb,
+    NULL,
+    TRUE,
+    4
   )
 ON CONFLICT (id) DO NOTHING;
 

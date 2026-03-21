@@ -216,14 +216,16 @@ export async function buildDatabaseSimulation(
       ...event,
       source: "forecast" as const,
       label: "カード引落予測",
-      detail: card ? `${card.name} / 締日ベース` : "card payment forecast"
+      detail: card ? `${card.name} / 締日ベース` : "card payment forecast",
+      basis: event.basis
     };
   });
   const decoratedDailySpendForecastEvents = dailySpendForecastEvents.map((event) => ({
     ...event,
     source: "forecast" as const,
     label: "日常支出予測",
-    detail: "実績平均から生成"
+    detail: "実績平均から生成",
+    basis: event.basis
   }));
 
   const snapshots = simulateRange({

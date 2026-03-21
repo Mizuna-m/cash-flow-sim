@@ -1009,6 +1009,19 @@ components:
           anyOf:
             - $ref: "#/components/schemas/UuidLike"
             - type: "null"
+        basis:
+          $ref: "#/components/schemas/ForecastBasis"
+
+    ForecastBasis:
+      type: object
+      required: [sourceEventIds, summary]
+      properties:
+        sourceEventIds:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
 
     SimulationResponse:
       type: object
@@ -1092,11 +1105,25 @@ components:
 
     SimulationComparisonDiff:
       type: object
-      required: [shortCountDelta, lowestActualBalanceDelta, endingActualBalanceDelta]
+      required:
+        [
+          shortCountDelta,
+          projectedShortCountDelta,
+          lowestTheoreticalBalanceDelta,
+          lowestActualBalanceDelta,
+          endingTheoreticalBalanceDelta,
+          endingActualBalanceDelta
+        ]
       properties:
         shortCountDelta:
           type: integer
+        projectedShortCountDelta:
+          type: integer
+        lowestTheoreticalBalanceDelta:
+          type: string
         lowestActualBalanceDelta:
+          type: string
+        endingTheoreticalBalanceDelta:
           type: string
         endingActualBalanceDelta:
           type: string

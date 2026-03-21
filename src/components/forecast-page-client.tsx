@@ -144,6 +144,11 @@ function SelectedDayPanel({ snapshot }: { snapshot: DailySimulationSnapshot | nu
                     <div className="wire-row-note">
                       {event.source} / {event.detail || event.kind} / {formatCurrency(event.amount)}
                     </div>
+                    {event.basis ? (
+                      <div className="wire-row-note">
+                        根拠: {event.basis.summary} / source {event.basis.sourceEventIds.length}件
+                      </div>
+                    ) : null}
                   </div>
                 ))
               )}

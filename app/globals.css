@@ -750,6 +750,11 @@ a {
   cursor: pointer;
 }
 
+.wire-small-button-ghost {
+  background: transparent;
+  color: #17212b;
+}
+
 .wire-button {
   cursor: pointer;
 }
@@ -845,8 +850,14 @@ a {
 
 .wire-settings-layout {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
   gap: 14px;
+}
+
+.wire-settings-column {
+  display: grid;
+  gap: 14px;
+  align-content: start;
 }
 
 .wire-box {
@@ -949,6 +960,34 @@ a {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+}
+
+.wire-select-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wire-select-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid #d7d0c4;
+  border-radius: 12px;
+  background: #fffdfa;
+}
+
+.wire-select-item input {
+  margin-top: 3px;
+}
+
+.wire-inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
 
 .wire-row-title {
@@ -1130,9 +1169,12 @@ a {
 }
 
 @media (max-width: 1280px) {
-  .wire-kpi-grid-six,
-  .wire-settings-layout {
+  .wire-kpi-grid-six {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wire-settings-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
   }
 
   .wire-sim-layout-large,

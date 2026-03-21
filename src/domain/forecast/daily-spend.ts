@@ -57,11 +57,25 @@ export function generateDailySpendForecastEvents(input: {
 }): SimulationEvent[] {
   const actualTransactionDates = new Set(input.transactions.map((transaction) => transaction.date));
   const latestActualDate = [...actualTransactionDates].sort().at(-1);
+  const routineExpenses = input.transactions.filter((transaction) => {
+    const amount = new Decimal(transaction.amount);
+    return (
+      amount.isNegative() &&
+      amount.abs().lessThanOrEqualTo(10000) &&
+      !hasProjectTag(transaction.tags)
+    );
+  });
   const baselineExpense = pickBaselineExpense(input.transactions);
 
   if (!latestActualDate || baselineExpense.lessThanOrEqualTo(0)) {
     return [];
   }
+
+  const basisIds = routineExpenses.map((transaction) => transaction.id);
+  const basisSummary =
+    routineExpenses.length > 0
+      ? `${routineExpenses.length}件の通常支出平均`
+      : "通常支出平均";
 
   return enumerateDates(input.startDate, input.endDate)
     .filter((date) => date > latestActualDate && !actualTransactionDates.has(date))
@@ -71,6 +85,10 @@ export function generateDailySpendForecastEvents(input: {
       kind: "daily-spend-forecast" as const,
       amount: baselineExpense.negated().toFixed(2),
       orderIndex: 9000 + index,
-      cardId: input.defaultCardId
+      cardId: input.defaultCardId,
+      basis: {
+        sourceEventIds: basisIds,
+        summary: basisSummary
+      }
     }));
 }

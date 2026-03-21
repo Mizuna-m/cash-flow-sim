@@ -157,7 +157,8 @@ function buildEventExplanations(
     detail: event.detail ?? "",
     amount: new Decimal(event.amount).toFixed(2),
     orderIndex: event.orderIndex,
-    cardId: event.cardId ?? defaultCardId
+    cardId: event.cardId ?? defaultCardId,
+    basis: event.basis
   }));
 }
 

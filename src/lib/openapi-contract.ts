@@ -111,6 +111,10 @@ export type DailyEventExplanation = {
   amount: string;
   orderIndex: number;
   cardId: string | null;
+  basis?: {
+    sourceEventIds: string[];
+    summary: string;
+  };
 };
 
 export type DailySimulationSnapshot = {
@@ -156,7 +160,10 @@ export type SimulationComparisonScenarioResult = {
   simulation: SimulationResponse;
   diff: {
     shortCountDelta: number;
+    projectedShortCountDelta: number;
+    lowestTheoreticalBalanceDelta: string;
     lowestActualBalanceDelta: string;
+    endingTheoreticalBalanceDelta: string;
     endingActualBalanceDelta: string;
   };
 };

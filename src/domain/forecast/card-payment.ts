@@ -85,6 +85,7 @@ export function generateCardPaymentForecastEvents(input: {
     input.actualCardPayments.map((payment) => `${payment.credit_card_id}:${payment.date}`)
   );
   const grouped = new Map<string, Decimal>();
+  const groupedUsageIds = new Map<string, string[]>();
 
   for (const usageEvent of input.usageEvents) {
     const amount = new Decimal(usageEvent.amount);
@@ -110,6 +111,9 @@ export function generateCardPaymentForecastEvents(input: {
     const key = `${resolvedCardId}:${paymentDate}`;
     const current = grouped.get(key) ?? new Decimal(0);
     grouped.set(key, current.plus(amount.abs()));
+    const ids = groupedUsageIds.get(key) ?? [];
+    ids.push(usageEvent.id);
+    groupedUsageIds.set(key, ids);
   }
 
   return [...grouped.entries()]
@@ -124,7 +128,11 @@ export function generateCardPaymentForecastEvents(input: {
         kind: "card-payment-forecast" as const,
         amount: amount.toFixed(2),
         orderIndex: 9500 + index,
-        cardId
+        cardId,
+        basis: {
+          sourceEventIds: groupedUsageIds.get(key) ?? [],
+          summary: `${(groupedUsageIds.get(key) ?? []).length}件のカード利用を集計`
+        }
       };
     });
 }

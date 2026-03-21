@@ -59,13 +59,15 @@ Status の意味:
 * 台帳から Transaction / CardPayment / BalanceEvent を削除できるようにした
 * ScheduledEvent は台帳から無効化 / 再有効化できるようにした
 * Settings の credit card 追加を mock から実 API 接続へ更新した
+* `/simulation` で ScheduledEvent を手動選択して compare API を叩けるようにした
+* forecast イベントに生成根拠メタデータを付与し、forecast ページで表示できるようにした
+* simulation / forecast / compare の理解用デモ seed と確認メモ `demo-walkthrough.md` を追加した
 
 次に着手するべきこと:
 
-* forecast explanation を「どの実績から生成したか」まで結び付ける
-* simulation の差分比較 UI を手動シナリオ選択まで広げる
 * 各削除操作に確認 UI や soft-delete 方針が要るか判断する
 * credit card の更新・削除・default 切替を API 化する
+* compare 結果の複数保持やベース比較切替が必要か判断する
 * API 変更時に OpenAPI も更新する運用を維持する
 
 ---
@@ -77,12 +79,12 @@ Status の意味:
 | M0 | 実装方針の固定化 | DONE | 実装方針とタスクリストが文書化されている | 本ファイルと `implementation-plan.md` を作成 |
 | M1 | Next.js + Podman の土台作成 | DONE | app と db がローカル起動する | compose build / up と HTTP 応答を確認済み |
 | M2 | DB スキーマ初版 | DONE | MVP中核エンティティのテーブルとマイグレーションがある | 初版 SQL と適用スクリプトを追加し、実 DB へ適用済み |
-| M3 | seed データ整備 | DOING | 主要ユースケースを再現できる seed がある | 初版 SQL seed を投入済み。simulation API と account/transaction API からは参照可能 |
-| M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。日別 event summary と event explanation 追加済み |
+| M3 | seed データ整備 | DOING | 主要ユースケースを再現できる seed がある | 初版 SQL seed と demo 用ケースを投入済み。simulation / forecast / compare の確認メモを追加 |
+| M4 | シミュレーションコア実装 | DOING | 日次残高・カード残高・ショート判定が計算できる | DB seed を使う simulation API まで実装済み。日別 event summary、event explanation、forecast basis を追加済み |
 | M5 | 予測ロジック実装 | DONE | DailySpendForecast と CardPaymentForecast が動く | 初版ロジックと forecast summary を実装済み。精度改善余地は残る |
 | M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions、scheduled-events、card-payments、balance-events を実装済み |
 | M7 | 最小UI 実装 | DOING | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | 新 UI ベースで dashboard / 入力 / simulation 可視化を更新済み。比較 UI は mock のまま |
-| M8 | シナリオ比較 | DOING | イベントON/OFFと比較ができる | compare API、差分表示、ScheduledEvent 無効化まで追加済み。手動シナリオ選択は未実装 |
+| M8 | シナリオ比較 | DOING | イベントON/OFFと比較ができる | compare API、差分表示、ScheduledEvent 無効化、手動シナリオ選択まで追加済み。比較履歴や保存は未実装 |
 | M9 | 移行導線の初版 | TODO | 直近3〜6か月を投入できる | CSVまたは手入力補助 |
 | M10 | 受け入れ確認 | TODO | AC の主要項目をテストまたは手順で確認できる | 重点は AC-01〜08, 16〜19, 21 |
 
@@ -116,7 +118,7 @@ Status の意味:
 | T22 | シミュレーション結果画面 | DONE | T17 | 理論/現実残高グラフが見える |
 | T23 | Project / Category 集計画面 | TODO | T18 | タグ別集計が見える |
 | T24 | イベント ON/OFF | DOING | T21,T22 | ScheduledEvent の無効化 PATCH と比較反映を追加済み。再有効化導線は限定的 |
-| T25 | シナリオ比較 UI/API | DOING | T24 | compare API と差分表示を追加済み。手動選択 UI は未実装 |
+| T25 | シナリオ比較 UI/API | DOING | T24 | compare API、差分表示、手動選択 UI を追加済み。複数比較の保存は未実装 |
 | T26 | 初回移行導線 | TODO | T18 | 手入力またはCSV投入ができる |
 | T27 | 受け入れテスト整備 | TODO | T09,T12,T14,T15,T16 | AC を検証できる |
 
@@ -167,7 +169,7 @@ Status の意味:
 
 次の実装着手はこの順がよい。
 
-1. ScheduledEvent の永続 ON/OFF 更新 API を追加する
-2. 比較 UI を手動シナリオ選択まで広げる
-3. forecast explanation を生成元データまでつなぐ
+1. credit card の更新・削除・default 切替を API 化する
+2. 各削除操作の確認 UI / soft-delete 方針を決める
+3. compare 結果の複数保持やベース比較切替を判断する
 4. 初回移行導線の入力補助を作る

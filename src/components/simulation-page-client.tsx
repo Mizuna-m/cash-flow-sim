@@ -12,6 +12,7 @@ import {
   YAxis
 } from "recharts";
 import type {
+  CardPayment,
   DashboardPayload,
   ScheduledEvent,
   SimulationComparisonResponse,
@@ -24,6 +25,14 @@ type SimulationState = DashboardPayload & {
     startDate: string;
     endDate: string;
   };
+};
+
+type SimulationChartRow = {
+  label: string;
+  date: string;
+  theoretical: number;
+  actual: number;
+  comparisonTheoretical: number | null;
 };
 
 function formatCurrency(value: number | string) {
@@ -53,19 +62,57 @@ function getLowestSnapshot(simulation: SimulationResponse) {
 
 function getChartData(simulation: SimulationResponse) {
   return simulation.snapshots.map((snapshot) => ({
-    ...snapshot,
     label: formatDate(snapshot.date),
+    date: snapshot.date,
     theoretical: Number(snapshot.theoreticalBalance),
-    actual: Number(snapshot.actualBalance)
+    actual: Number(snapshot.actualBalance),
+    comparisonTheoretical: null as number | null
   }));
 }
 
-function getYAxisDomain(data: ReturnType<typeof getChartData>) {
+function getComparisonChartData(
+  baseSimulation: SimulationResponse,
+  scenarioSimulation: SimulationResponse
+) {
+  const scenarioByDate = new Map(
+    scenarioSimulation.snapshots.map((snapshot) => [snapshot.date, snapshot])
+  );
+
+  return baseSimulation.snapshots.map((baseSnapshot) => {
+    const scenarioSnapshot = scenarioByDate.get(baseSnapshot.date);
+
+    return {
+      label: formatDate(baseSnapshot.date),
+      date: baseSnapshot.date,
+      theoretical: Number(baseSnapshot.theoreticalBalance),
+      actual: Number(baseSnapshot.actualBalance),
+      comparisonTheoretical: Number(
+        scenarioSnapshot?.theoreticalBalance ?? baseSnapshot.theoreticalBalance
+      )
+    };
+  });
+}
+
+function getYAxisDomain(data: SimulationChartRow[]) {
   if (data.length === 0) {
     return [0, 100000];
   }
 
   const values = data.flatMap((item) => [item.theoretical, item.actual]);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const padding = Math.max((max - min) * 0.14, 20000);
+  const lower = Math.floor((min - padding) / 10000) * 10000;
+  const upper = Math.ceil((max + padding) / 10000) * 10000;
+
+  return [lower, upper];
+}
+
+function getNumericYAxisDomain(values: number[]) {
+  if (values.length === 0) {
+    return [0, 100000];
+  }
+
   const min = Math.min(...values);
   const max = Math.max(...values);
   const padding = Math.max((max - min) * 0.14, 20000);
@@ -106,7 +153,17 @@ async function postJson<T>(url: string, body: unknown) {
 async function refreshSimulation(range: { startDate: string; endDate: string }) {
   const query = new URLSearchParams(range).toString();
 
-  return fetchJson<SimulationResponse>(`/api/simulation?${query}`);
+  const [simulation, scheduledEvents, cardPayments] = await Promise.all([
+    fetchJson<SimulationResponse>(`/api/simulation?${query}`),
+    fetchJson<{ scheduledEvents: ScheduledEvent[] }>(`/api/scheduled-events?${query}`),
+    fetchJson<{ cardPayments: CardPayment[] }>(`/api/card-payments?${query}`)
+  ]);
+
+  return {
+    simulation,
+    scheduledEvents: scheduledEvents.scheduledEvents,
+    cardPayments: cardPayments.cardPayments
+  };
 }
 
 function buildScenarioCandidates(events: ScheduledEvent[]): SimulationComparisonScenarioRequest[] {
@@ -132,14 +189,46 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
   const [comparison, setComparison] = useState<SimulationComparisonResponse | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const chartData = useMemo(() => getChartData(state.simulation), [state.simulation]);
-  const yDomain = useMemo(() => getYAxisDomain(chartData), [chartData]);
+  const [selectedScenarioIds, setSelectedScenarioIds] = useState<string[]>([]);
+  const baseChartData = useMemo(() => getChartData(state.simulation), [state.simulation]);
   const lowest = useMemo(() => getLowestSnapshot(state.simulation), [state.simulation]);
   const shortCount = state.simulation.snapshots.filter((snapshot) => snapshot.short).length;
   const nextCardPayment = [...state.cardPayments].sort((a, b) => a.date.localeCompare(b.date))[0];
   const scenarioCandidates = useMemo(
     () => buildScenarioCandidates(state.scheduledEvents),
     [state.scheduledEvents]
+  );
+  const selectableScheduledEvents = useMemo(
+    () =>
+      state.scheduledEvents
+        .filter((event) => event.isActive && Number(event.amount) < 0)
+        .sort((left, right) => left.startDate.localeCompare(right.startDate)),
+    [state.scheduledEvents]
+  );
+  const selectedScenarioEvents = useMemo(
+    () => selectableScheduledEvents.filter((event) => selectedScenarioIds.includes(event.id)),
+    [selectableScheduledEvents, selectedScenarioIds]
+  );
+  const firstComparisonScenario = comparison?.scenarios[0] ?? null;
+  const chartData = useMemo(
+    () =>
+      firstComparisonScenario
+        ? getComparisonChartData(state.simulation, firstComparisonScenario.simulation)
+        : baseChartData,
+    [baseChartData, firstComparisonScenario, state.simulation]
+  );
+  const yDomain = useMemo(
+    () =>
+      chartData.some((item) => item.comparisonTheoretical !== null)
+        ? getNumericYAxisDomain(
+            chartData.flatMap((item) => [
+              item.theoretical,
+              item.actual,
+              item.comparisonTheoretical ?? item.theoretical
+            ])
+          )
+        : getYAxisDomain(chartData),
+    [chartData]
   );
 
   const kpis = [
@@ -177,13 +266,16 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
     setMessage("");
 
     try {
-      const simulation = await refreshSimulation(range);
+      const refreshed = await refreshSimulation(range);
       setState((current) => ({
         ...current,
-        simulation,
+        simulation: refreshed.simulation,
+        scheduledEvents: refreshed.scheduledEvents,
+        cardPayments: refreshed.cardPayments,
         range
       }));
       setComparison(null);
+      setSelectedScenarioIds([]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "再計算に失敗しました");
     } finally {
@@ -207,6 +299,31 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSelectedCompare() {
+    if (selectedScenarioEvents.length === 0) {
+      setMessage("比較する予定イベントを1件以上選んでください");
+      return;
+    }
+
+    await handleCompare({
+      id: `manual-${selectedScenarioEvents.map((event) => event.id).join("-")}`,
+      label:
+        selectedScenarioEvents.length === 1
+          ? `${selectedScenarioEvents[0]?.name ?? "予定"} を外した場合`
+          : `${selectedScenarioEvents.length}件の予定を外した場合`,
+      detail: selectedScenarioEvents.map((event) => event.name).join(" / "),
+      excludedEventIds: selectedScenarioEvents.map((event) => event.id)
+    });
+  }
+
+  function toggleScenarioSelection(eventId: string) {
+    setSelectedScenarioIds((current) =>
+      current.includes(eventId)
+        ? current.filter((id) => id !== eventId)
+        : [...current, eventId]
+    );
   }
 
   return (
@@ -240,6 +357,9 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
           <div className="wire-box-head">
             <span className="wire-label">Balance Chart</span>
             {lowest ? <span className="wire-inline-chip">最低残高 {formatDate(lowest.date)}</span> : null}
+            {firstComparisonScenario ? (
+              <span className="wire-inline-chip">{firstComparisonScenario.label}</span>
+            ) : null}
           </div>
           <div className="wire-chart-area-lg">
             <ResponsiveContainer width="100%" height="100%">
@@ -276,8 +396,33 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                     strokeDasharray="7 7"
                   />
                 ) : null}
-                <Line type="monotone" dataKey="theoretical" stroke="#376ed4" strokeWidth={3} dot={false} />
-                <Line type="monotone" dataKey="actual" stroke="#4f7d60" strokeWidth={3} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="theoretical"
+                  name="base theoretical"
+                  stroke={firstComparisonScenario ? "#8a99ab" : "#376ed4"}
+                  strokeWidth={firstComparisonScenario ? 2 : 3}
+                  dot={false}
+                />
+                {firstComparisonScenario ? (
+                  <Line
+                    type="monotone"
+                    dataKey="comparisonTheoretical"
+                    name="scenario theoretical"
+                    stroke="#c65b4d"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                ) : null}
+                <Line
+                  type="monotone"
+                  dataKey="actual"
+                  name="actual"
+                  stroke="#4f7d60"
+                  strokeWidth={3}
+                  strokeDasharray={firstComparisonScenario ? "6 6" : undefined}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -329,18 +474,73 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                 <div className="wire-row-sub">{scenario.detail}</div>
               </button>
             ))}
+            <div className="wire-list-item">
+              <div className="wire-list-top">
+                <div className="wire-row-title">手動シナリオ選択</div>
+                <div className="wire-row-action">{selectedScenarioIds.length}件選択中</div>
+              </div>
+              <div className="wire-select-list">
+                {selectableScheduledEvents.length === 0 ? (
+                  <div className="wire-row-sub">比較対象になる予定イベントがありません</div>
+                ) : (
+                  selectableScheduledEvents.map((event) => (
+                    <label key={event.id} className="wire-select-item">
+                      <input
+                        type="checkbox"
+                        checked={selectedScenarioIds.includes(event.id)}
+                        onChange={() => toggleScenarioSelection(event.id)}
+                      />
+                      <span>
+                        <strong>{event.name}</strong>
+                        <span className="wire-row-sub">
+                          {event.startDate} / {formatCurrency(event.amount)}
+                        </span>
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+              <div className="wire-inline-actions">
+                <button
+                  type="button"
+                  className="wire-small-button"
+                  onClick={() => void handleSelectedCompare()}
+                  disabled={selectedScenarioIds.length === 0 || loading}
+                >
+                  選択中の予定で比較
+                </button>
+                <button
+                  type="button"
+                  className="wire-small-button wire-small-button-ghost"
+                  onClick={() => setSelectedScenarioIds([])}
+                  disabled={selectedScenarioIds.length === 0 || loading}
+                >
+                  選択解除
+                </button>
+              </div>
+            </div>
             {comparison ? (
               comparison.scenarios.map((scenario) => (
                 <div key={scenario.id} className="wire-list-item">
                   <div className="wire-list-top">
                     <div className="wire-row-title">{scenario.label}</div>
-                    <div className={Number(scenario.diff.lowestActualBalanceDelta) >= 0 ? "ok" : "danger"}>
-                      {formatCurrency(scenario.diff.lowestActualBalanceDelta)}
+                    <div
+                      className={
+                        Number(scenario.diff.lowestTheoreticalBalanceDelta) >= 0 ? "ok" : "danger"
+                      }
+                    >
+                      {formatCurrency(scenario.diff.lowestTheoreticalBalanceDelta)}
                     </div>
                   </div>
                   <div className="wire-row-sub">
-                    short {scenario.diff.shortCountDelta >= 0 ? "+" : ""}
-                    {scenario.diff.shortCountDelta} / ending {formatCurrency(scenario.diff.endingActualBalanceDelta)}
+                    projected short {scenario.diff.projectedShortCountDelta >= 0 ? "+" : ""}
+                    {scenario.diff.projectedShortCountDelta} / ending{" "}
+                    {formatCurrency(scenario.diff.endingTheoreticalBalanceDelta)}
+                  </div>
+                  <div className="wire-row-sub">
+                    actual short {scenario.diff.shortCountDelta >= 0 ? "+" : ""}
+                    {scenario.diff.shortCountDelta} / actual ending{" "}
+                    {formatCurrency(scenario.diff.endingActualBalanceDelta)}
                   </div>
                 </div>
               ))

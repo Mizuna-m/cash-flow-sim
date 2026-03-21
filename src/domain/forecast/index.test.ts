@@ -34,6 +34,10 @@ test("generateDailySpendForecastEvents creates future forecasts from routine spe
       ["2026-03-05", "-1500.00"]
     ]
   );
+  assert.deepEqual(events[0]?.basis, {
+    sourceEventIds: ["1", "2"],
+    summary: "2件の通常支出平均"
+  });
 });
 
 test("generateCardPaymentForecastEvents groups usage by card closing period", () => {
@@ -63,4 +67,8 @@ test("generateCardPaymentForecastEvents groups usage by card closing period", ()
       ["2026-05-10", "2000.00"]
     ]
   );
+  assert.deepEqual(events[0]?.basis, {
+    sourceEventIds: ["u1", "u2"],
+    summary: "2件のカード利用を集計"
+  });
 });

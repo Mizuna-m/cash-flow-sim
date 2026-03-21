@@ -16,6 +16,10 @@ export type SimulationEvent = {
   source?: "actual" | "forecast";
   label?: string;
   detail?: string;
+  basis?: {
+    sourceEventIds: string[];
+    summary: string;
+  };
 };
 
 export type DailyEventSummary = {
@@ -36,6 +40,10 @@ export type DailyEventExplanation = {
   amount: string;
   orderIndex: number;
   cardId: string | null;
+  basis?: {
+    sourceEventIds: string[];
+    summary: string;
+  };
 };
 
 export type DailySimulationSnapshot = {

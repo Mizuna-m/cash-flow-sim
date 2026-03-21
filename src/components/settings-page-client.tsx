@@ -71,108 +71,124 @@ export function SettingsPageClient({ initialData }: { initialData: DashboardPayl
         <div>
           <h2 className="wire-section-title">設定 / マスタ</h2>
           <p className="wire-section-meta">
-            口座追加はここ。カード設定は一覧までは実データ、追加編集は API 不足のため Mock として残す。
+            左で現在の登録内容を確認し、右で追加操作を行う。表示と入力の役割を分離して混線を減らす。
           </p>
         </div>
       </div>
 
       <div className="wire-settings-layout">
-        <div className="wire-box wire-form-panel">
-          <div className="wire-box-head">
-            <span className="wire-label">Account Form</span>
+        <div className="wire-settings-column">
+          <div className="wire-box wire-form-panel">
+            <div className="wire-box-head">
+              <span className="wire-label">Accounts</span>
+            </div>
+            <div className="wire-list">
+              {accounts.map((account) => (
+                <div key={account.id} className="wire-list-item">
+                  <div className="wire-list-top">
+                    <div className="wire-row-title">{account.name}</div>
+                    <div>{account.type}</div>
+                  </div>
+                  <div className="wire-row-sub">{account.currency} / {account.initialBalance}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <form action={handleCreateAccount}>
-            <div className="wire-form-grid wire-form-grid-settings">
-              <input name="name" className="wire-input" placeholder="口座名" />
-              <select name="type" className="wire-input" defaultValue="bank">
-                <option value="bank">銀行</option>
-                <option value="cash">現金</option>
-                <option value="credit">クレジット</option>
-                <option value="loan">借入</option>
-                <option value="investment">投資</option>
-              </select>
-              <input name="currency" className="wire-input" defaultValue="JPY" />
-              <input name="initialBalance" type="number" step="0.01" className="wire-input" placeholder="初期残高" />
+
+          <div className="wire-box wire-form-panel">
+            <div className="wire-box-head">
+              <span className="wire-label">Cards</span>
             </div>
-            <div className="wire-form-actions">
-              <button type="submit" className="wire-button">口座を追加</button>
+            <div className="wire-list">
+              {creditCards.map((card) => (
+                <div key={card.id} className="wire-list-item">
+                  <div className="wire-list-top">
+                    <div className="wire-row-title">{card.name}</div>
+                    <div>{card.isDefault ? "default" : "card"}</div>
+                  </div>
+                  <div className="wire-row-sub">
+                    締日 {card.closingDay} / 支払日 {card.paymentDay} /{" "}
+                    {card.settlementAccountId ?? "引落口座未設定"}
+                  </div>
+                </div>
+              ))}
             </div>
-          </form>
+          </div>
         </div>
 
-        <div className="wire-box wire-form-panel">
-          <div className="wire-box-head">
-            <span className="wire-label">Accounts</span>
-          </div>
-          <div className="wire-list">
-            {accounts.map((account) => (
-              <div key={account.id} className="wire-list-item">
-                <div className="wire-list-top">
-                  <div className="wire-row-title">{account.name}</div>
-                  <div>{account.type}</div>
-                </div>
-                <div className="wire-row-sub">{account.currency} / {account.initialBalance}</div>
+        <div className="wire-settings-column">
+          <div className="wire-box wire-form-panel">
+            <div className="wire-box-head">
+              <span className="wire-label">Add Account</span>
+            </div>
+            <form action={handleCreateAccount}>
+              <div className="wire-form-grid wire-form-grid-settings">
+                <input name="name" className="wire-input" placeholder="口座名" />
+                <select name="type" className="wire-input" defaultValue="bank">
+                  <option value="bank">銀行</option>
+                  <option value="cash">現金</option>
+                  <option value="credit">クレジット</option>
+                  <option value="loan">借入</option>
+                  <option value="investment">投資</option>
+                </select>
+                <input name="currency" className="wire-input" defaultValue="JPY" />
+                <input
+                  name="initialBalance"
+                  type="number"
+                  step="0.01"
+                  className="wire-input"
+                  placeholder="初期残高"
+                />
               </div>
-            ))}
+              <div className="wire-form-actions">
+                <button type="submit" className="wire-button">口座を追加</button>
+              </div>
+            </form>
           </div>
-        </div>
 
-        <div className="wire-box wire-form-panel">
-          <div className="wire-box-head">
-            <span className="wire-label">Cards</span>
-          </div>
-          <form action={handleCreateCreditCard}>
-            <div className="wire-form-grid wire-form-grid-settings">
-              <input name="name" className="wire-input" placeholder="カード名" />
-              <input
-                name="closingDay"
-                type="number"
-                min="1"
-                max="31"
-                defaultValue="25"
-                className="wire-input"
-                placeholder="締日"
-              />
-              <input
-                name="paymentDay"
-                type="number"
-                min="1"
-                max="31"
-                defaultValue="10"
-                className="wire-input"
-                placeholder="支払日"
-              />
-              <select name="settlementAccountId" className="wire-input" defaultValue="">
-                <option value="">引落口座未指定</option>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
-              <input name="currency" className="wire-input" defaultValue="JPY" />
-              <label className="wire-check">
-                <input name="isDefault" type="checkbox" />
-                default card にする
-              </label>
+          <div className="wire-box wire-form-panel">
+            <div className="wire-box-head">
+              <span className="wire-label">Add Card</span>
             </div>
-            <div className="wire-form-actions">
-              <button type="submit" className="wire-button">カードを追加</button>
-            </div>
-          </form>
-          <div className="wire-list">
-            {creditCards.map((card) => (
-              <div key={card.id} className="wire-list-item">
-                <div className="wire-list-top">
-                  <div className="wire-row-title">{card.name}</div>
-                  <div>{card.isDefault ? "default" : "card"}</div>
-                </div>
-                <div className="wire-row-sub">
-                  締日 {card.closingDay} / 支払日 {card.paymentDay} /{" "}
-                  {card.settlementAccountId ?? "引落口座未設定"}
-                </div>
+            <form action={handleCreateCreditCard}>
+              <div className="wire-form-grid wire-form-grid-settings">
+                <input name="name" className="wire-input" placeholder="カード名" />
+                <input
+                  name="closingDay"
+                  type="number"
+                  min="1"
+                  max="31"
+                  defaultValue="25"
+                  className="wire-input"
+                  placeholder="締日"
+                />
+                <input
+                  name="paymentDay"
+                  type="number"
+                  min="1"
+                  max="31"
+                  defaultValue="10"
+                  className="wire-input"
+                  placeholder="支払日"
+                />
+                <select name="settlementAccountId" className="wire-input" defaultValue="">
+                  <option value="">引落口座未指定</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
+                <input name="currency" className="wire-input" defaultValue="JPY" />
+                <label className="wire-check">
+                  <input name="isDefault" type="checkbox" />
+                  default card にする
+                </label>
               </div>
-            ))}
+              <div className="wire-form-actions">
+                <button type="submit" className="wire-button">カードを追加</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

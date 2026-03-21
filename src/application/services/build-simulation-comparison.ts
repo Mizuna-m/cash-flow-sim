@@ -17,11 +17,25 @@ export type SimulationComparisonResponse = {
     simulation: BuiltSimulation;
     diff: {
       shortCountDelta: number;
+      projectedShortCountDelta: number;
+      lowestTheoreticalBalanceDelta: string;
       lowestActualBalanceDelta: string;
+      endingTheoreticalBalanceDelta: string;
       endingActualBalanceDelta: string;
     };
   }>;
 };
+
+function getLowestTheoreticalBalance(simulation: BuiltSimulation) {
+  if (simulation.snapshots.length === 0) {
+    return 0;
+  }
+
+  return simulation.snapshots.reduce((lowest, snapshot) => {
+    const current = Number(snapshot.theoreticalBalance);
+    return current < lowest ? current : lowest;
+  }, Number.POSITIVE_INFINITY);
+}
 
 function getLowestActualBalance(simulation: BuiltSimulation) {
   if (simulation.snapshots.length === 0) {
@@ -36,6 +50,14 @@ function getLowestActualBalance(simulation: BuiltSimulation) {
 
 function getShortCount(simulation: BuiltSimulation) {
   return simulation.snapshots.filter((snapshot) => snapshot.short).length;
+}
+
+function getProjectedShortCount(simulation: BuiltSimulation) {
+  return simulation.snapshots.filter((snapshot) => Number(snapshot.theoreticalBalance) < 0).length;
+}
+
+function getEndingTheoreticalBalance(simulation: BuiltSimulation) {
+  return Number(simulation.snapshots.at(-1)?.theoreticalBalance ?? 0);
 }
 
 function getEndingActualBalance(simulation: BuiltSimulation) {
@@ -63,8 +85,16 @@ export async function buildSimulationComparison(
         simulation,
         diff: {
           shortCountDelta: getShortCount(simulation) - getShortCount(base),
+          projectedShortCountDelta:
+            getProjectedShortCount(simulation) - getProjectedShortCount(base),
+          lowestTheoreticalBalanceDelta: (
+            getLowestTheoreticalBalance(simulation) - getLowestTheoreticalBalance(base)
+          ).toFixed(2),
           lowestActualBalanceDelta: (
             getLowestActualBalance(simulation) - getLowestActualBalance(base)
+          ).toFixed(2),
+          endingTheoreticalBalanceDelta: (
+            getEndingTheoreticalBalance(simulation) - getEndingTheoreticalBalance(base)
           ).toFixed(2),
           endingActualBalanceDelta: (
             getEndingActualBalance(simulation) - getEndingActualBalance(base)
