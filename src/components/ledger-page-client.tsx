@@ -12,11 +12,13 @@ import type {
   DashboardPayload,
   ScheduledEvent,
   ScheduledEventCreateRequest,
+  SpreadsheetImportPreview,
+  SpreadsheetImportResult,
   Transaction,
   TransactionCreateRequest
 } from "@/src/lib/openapi-contract";
 
-type ComposerTab = "scheduled" | "transaction" | "payment" | "balance";
+type ComposerTab = "scheduled" | "transaction" | "payment" | "balance" | "import";
 
 type LedgerItem = {
   id: string;
@@ -87,6 +89,16 @@ async function patchJson<T>(url: string, body: unknown) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
+  });
+  const payload = (await response.json()) as T & { message?: string };
+  if (!response.ok) throw new Error(payload.message ?? "Request failed");
+  return payload;
+}
+
+async function postFormData<T>(url: string, body: FormData) {
+  const response = await fetch(url, {
+    method: "POST",
+    body
   });
   const payload = (await response.json()) as T & { message?: string };
   if (!response.ok) throw new Error(payload.message ?? "Request failed");
@@ -167,6 +179,15 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
   const [search, setSearch] = useState("");
   const [flash, setFlash] = useState("");
   const [pendingActionItem, setPendingActionItem] = useState<LedgerItem | null>(null);
+  const [importPreview, setImportPreview] = useState<SpreadsheetImportPreview | null>(null);
+  const accountNameById = useMemo(
+    () => new Map(data.accounts.map((account) => [account.id, account.name])),
+    [data.accounts]
+  );
+  const cardNameById = useMemo(
+    () => new Map(data.creditCards.map((card) => [card.id, card.name])),
+    [data.creditCards]
+  );
   const ledgerItems = useMemo(
     () =>
       buildLedgerItems(
@@ -300,6 +321,33 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
     }
   }
 
+  async function submitImport(mode: "preview" | "import", formData: FormData) {
+    const payload = new FormData();
+    const file = formData.get("file");
+    if (file instanceof File && file.size > 0) {
+      payload.set("file", file);
+    }
+    const sheetName = String(formData.get("sheetName") ?? "");
+    const profile = String(formData.get("profile") ?? "");
+    payload.set("mode", mode);
+    if (sheetName) payload.set("sheetName", sheetName);
+    if (profile) payload.set("profile", profile);
+
+    const response = await postFormData<{
+      preview: SpreadsheetImportPreview;
+      result?: SpreadsheetImportResult;
+    }>("/api/import/spreadsheet", payload);
+
+    setImportPreview(response.preview);
+
+    if (response.result) {
+      await refreshLists();
+      setFlash(`${response.result.importedCount}件をインポートしました。`);
+    } else {
+      setFlash("dry-run を更新しました。");
+    }
+  }
+
   return (
     <section className="wire-panel wire-section wire-ledger-refined">
       <ConfirmDialog
@@ -388,7 +436,8 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
               ["scheduled", "イベント追加"],
               ["transaction", "実績入力"],
               ["payment", "引落入力"],
-              ["balance", "資金移動"]
+              ["balance", "資金移動"],
+              ["import", "インポート"]
             ].map(([id, label]) => (
               <button
                 key={id}
@@ -508,6 +557,133 @@ export function LedgerPageClient({ initialData }: { initialData: DashboardPayloa
                 <input name="orderIndex" type="number" min="0" defaultValue="0" className="wire-input" placeholder="順序" />
               </div>
             </LedgerForm>
+          ) : null}
+
+          {tab === "import" ? (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitImport("preview", new FormData(event.currentTarget));
+              }}
+            >
+              <div className="wire-form-grid">
+                <input
+                  name="file"
+                  type="file"
+                  accept=".ods,.csv"
+                  className="wire-input wire-input-wide"
+                  autoFocus
+                />
+                <select
+                  name="sheetName"
+                  className="wire-input"
+                  defaultValue={importPreview?.selectedSheetName ?? ""}
+                >
+                  <option value="">自動選択</option>
+                  {importPreview?.sheets.map((sheet) => (
+                    <option key={sheet.name} value={sheet.name}>
+                      {sheet.name} ({sheet.rowCount} rows)
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="profile"
+                  className="wire-input"
+                  defaultValue={importPreview?.selectedProfile ?? ""}
+                >
+                  <option value="">自動判定</option>
+                  <option value="financial-analysis-expense">支出 {"->"} transaction</option>
+                  <option value="financial-analysis-income">収入 {"->"} transaction</option>
+                  <option value="financial-analysis-recurring">定期支出 {"->"} transaction</option>
+                </select>
+                <div className="wire-input wire-input-wide wire-import-help">
+                  Financial Analysis の `支出 / 収入 / 定期支出` を対象に、まず dry-run で列対応を確認します。
+                </div>
+              </div>
+              <div className="wire-form-actions">
+                <button type="submit" className="wire-button">
+                  Dry-run
+                </button>
+                <button
+                  type="button"
+                  className="wire-button wire-button-secondary"
+                  onClick={(event) => {
+                    const form = event.currentTarget.form;
+                    if (!form) return;
+                    void submitImport("import", new FormData(form));
+                  }}
+                >
+                  Import
+                </button>
+              </div>
+
+              {importPreview ? (
+                <div className="wire-import-preview">
+                  <div className="wire-import-meta">
+                    <span className="wire-label">
+                      {importPreview.selectedSheetName ?? "sheet unknown"}
+                    </span>
+                    <span className="wire-row-note">
+                      {importPreview.selectedProfile ?? "profile unknown"} /{" "}
+                      {importPreview.canImport ? "importable" : "check issues"}
+                    </span>
+                  </div>
+
+                  {importPreview.issues.length > 0 ? (
+                    <div className="wire-import-issues">
+                      {importPreview.issues.slice(0, 8).map((issue, index) => (
+                        <div key={`${issue.message}-${index}`} className={`wire-import-issue ${issue.level}`}>
+                          {issue.rowNumber ? `row ${issue.rowNumber}: ` : ""}
+                          {issue.message}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div className="wire-table-header wire-table-header-ledger">
+                    <div>row</div>
+                    <div>date</div>
+                    <div>payee</div>
+                    <div>description</div>
+                    <div>amount</div>
+                  </div>
+                  <div className="wire-table wire-table-spacious">
+                    {importPreview.previewRows.map((row) => (
+                      <div key={`${row.rowNumber}-${row.date}-${row.amount}`} className="wire-table-row wire-table-row-ledger">
+                        <div>{row.rowNumber}</div>
+                        <div>{row.date}</div>
+                        <div>
+                          {row.payee || "-"}
+                          <div className="wire-row-note">
+                            {row.categoryPath.join(" > ") || "category none"}
+                          </div>
+                        </div>
+                        <div>
+                          {row.description || "-"}
+                          <div className="wire-row-note">
+                            {[
+                              row.project ? `project: ${row.project}` : "",
+                              row.accountId
+                                ? `account: ${accountNameById.get(row.accountId) ?? row.accountId}`
+                                : "",
+                              row.cardId ? `card: ${cardNameById.get(row.cardId) ?? row.cardId}` : "",
+                              row.appliedSuggestionFields.length > 0
+                                ? `suggested: ${row.appliedSuggestionFields.join(", ")}`
+                                : row.note
+                            ]
+                              .filter(Boolean)
+                              .join(" / ")}
+                          </div>
+                        </div>
+                        <div className={Number(row.amount) < 0 ? "danger" : "ok"}>
+                          {formatCurrency(row.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </form>
           ) : null}
 
           <div className="wire-kbd-row">

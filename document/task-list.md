@@ -73,6 +73,8 @@ Status の意味:
 * Project / Category だけでなく、既存の `種別グループ` に相当する集計も新システム側で見られる状態を目標にする
 * 外貨は専用台帳の再現より、口座ごとの `currency` を正しく扱えることを優先する
 * 大量入力前提の UX 改善として、取引先・取引先詳細・種別階層・Project・口座・カードの強いサジェストと、キーボード完結の入力体験を入れる方針を追加した
+* `api/import/spreadsheet` を追加し、`Financial Analysis` の `支出 / 収入 / 定期支出` を ODS/CSV から dry-run / import できる初版導線を進めている
+* import preview では既存 transaction の `payee` 履歴から `category_path / project / account / card` を補完候補として提案できるようにした
 
 次に着手するべきこと:
 
@@ -96,7 +98,7 @@ Status の意味:
 | M6 | API 実装 | DOING | CRUD と simulation API が動く | simulation、accounts、transactions、scheduled-events、card-payments、balance-events を実装済み |
 | M7 | 最小UI 実装 | DOING | UC-01, UC-02, UC-03, UC-05, UC-06 を触れる | 新 UI ベースで dashboard / 入力 / simulation 可視化を更新済み。比較 UI は mock のまま |
 | M8 | シナリオ比較 | DOING | イベントON/OFFと比較ができる | compare API、差分表示、ScheduledEvent 無効化、手動シナリオ選択、複数比較保持まで追加済み。比較履歴や保存は未実装 |
-| M9 | 移行導線の初版 | TODO | 直近3〜6か月を投入できる | CSVまたは手入力補助 |
+| M9 | 移行導線の初版 | DOING | 直近3〜6か月を投入できる | CSV/ODS インポートと確認導線を優先する。初版の dry-run / import API と ledger UI を追加中 |
 | M10 | 受け入れ確認 | TODO | AC の主要項目をテストまたは手順で確認できる | 重点は AC-01〜08, 16〜19, 21 |
 
 ---
@@ -130,12 +132,12 @@ Status の意味:
 | T23 | Project / Category / Group 集計画面 | TODO | T18 | Project別、種別階層別、種別グループ相当の集計が見える |
 | T24 | イベント ON/OFF | DOING | T21,T22 | ScheduledEvent の無効化 PATCH と比較反映を追加済み。再有効化導線は限定的 |
 | T25 | シナリオ比較 UI/API | DOING | T24 | compare API、差分表示、手動選択 UI、複数比較保持を追加済み。比較の保存やベース切替は未実装 |
-| T26 | 初回移行導線 | TODO | T18 | 手入力またはCSV投入ができ、既存列 `日付・取引先・取引先詳細・内容・金額・備考・種別・プロジェクト` を欠落なく対応付けられる |
+| T26 | 初回移行導線 | DOING | T18 | CSV/ODS の dry-run と本投入ができ、既存列 `日付・取引先・取引先詳細・内容・金額・備考・種別・プロジェクト` を欠落なく対応付けられる |
 | T27 | 受け入れテスト整備 | TODO | T09,T12,T14,T15,T16 | AC を検証できる |
 | T28 | simulation 高速化方針の設計 | TODO | T12,T17 | 初期残高からの全件再計算を避ける方針と保存単位を決める |
 | T29 | account 表示順の導入 | TODO | T06,T12 | 口座表示順を `display_order` 等で制御でき、forecast / settings / ledger で一貫して並ぶ |
 | T30 | カード支払日オーバーライド設計 | TODO | T14,T18 | 土日や祝日ずれを手動補正できる入力・保存方法を決める |
-| T31 | 入力補助 / サジェスト UX | TODO | T18,T20,T26 | 取引先・取引先詳細・種別階層・Project・口座・カードを既存入力から強くサジェストでき、矢印キー / Enter / Tab / Esc で完結操作できる |
+| T31 | インポート補助 / サジェスト UX | DOING | T18,T20,T26 | 列マッピング、取引先・取引先詳細・種別階層・Project・口座・カードを既存入力から強くサジェストでき、dry-run 確認と矢印キー / Enter / Tab / Esc で完結操作できる。payee 起点の既定候補補完は初版実装済み |
 
 ---
 
@@ -184,7 +186,7 @@ Status の意味:
 
 次の実装着手はこの順がよい。
 
-1. 初回移行導線の入力補助を作る
-2. Project / Category / Group 集計画面の設計と実装に入る
-3. simulation の月次スナップショットまたは増分再計算の設計に入る
-4. account 表示順を明示管理する設計に入る
+1. CSV/ODS インポート中心の初回移行導線を作る
+2. 列マッピング補助とサジェスト UX を移行導線に組み込む
+3. Project / Category / Group 集計画面の設計と実装に入る
+4. simulation の月次スナップショットまたは増分再計算の設計に入る

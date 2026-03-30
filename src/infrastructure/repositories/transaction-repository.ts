@@ -1,4 +1,5 @@
 import { dbPool } from "@/src/infrastructure/db/client";
+import type { PoolClient } from "pg";
 
 export type TransactionRecord = {
   id: string;
@@ -156,6 +157,107 @@ export async function createTransaction(input: {
   );
 
   return mapTransaction(result.rows[0]);
+}
+
+async function insertTransaction(
+  client: PoolClient,
+  input: {
+    date: string;
+    amount: string;
+    accountId?: string | null;
+    payee?: string;
+    payeeDetail?: string[];
+    description?: string;
+    note?: string;
+    categoryPath?: string[];
+    tags: Record<string, unknown>;
+    cardId?: string | null;
+    orderIndex?: number;
+  }
+) {
+  const result = await client.query<TransactionRow>(
+    `
+      INSERT INTO transactions (
+        date,
+        amount,
+        account_id,
+        payee,
+        payee_detail,
+        description,
+        note,
+        category_path,
+        tags,
+        card_id,
+        order_index
+      )
+      VALUES ($1::date, $2::numeric, $3::uuid, $4, $5::jsonb, $6, $7, $8::jsonb, $9::jsonb, $10::uuid, $11)
+      RETURNING
+        id,
+        date::text,
+        amount::text,
+        account_id::text,
+        payee,
+        payee_detail,
+        description,
+        note,
+        category_path,
+        tags,
+        card_id::text,
+        order_index,
+        created_at::text,
+        updated_at::text
+    `,
+    [
+      input.date,
+      input.amount,
+      input.accountId ?? null,
+      input.payee ?? "",
+      JSON.stringify(input.payeeDetail ?? []),
+      input.description ?? "",
+      input.note ?? "",
+      JSON.stringify(input.categoryPath ?? []),
+      JSON.stringify(input.tags),
+      input.cardId ?? null,
+      input.orderIndex ?? 0
+    ]
+  );
+
+  return mapTransaction(result.rows[0]);
+}
+
+export async function createTransactionsBulk(
+  inputs: Array<{
+    date: string;
+    amount: string;
+    accountId?: string | null;
+    payee?: string;
+    payeeDetail?: string[];
+    description?: string;
+    note?: string;
+    categoryPath?: string[];
+    tags: Record<string, unknown>;
+    cardId?: string | null;
+    orderIndex?: number;
+  }>
+) {
+  const client = await dbPool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const rows: TransactionRecord[] = [];
+
+    for (const input of inputs) {
+      rows.push(await insertTransaction(client, input));
+    }
+
+    await client.query("COMMIT");
+    return rows;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function deleteTransaction(id: string) {

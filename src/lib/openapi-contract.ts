@@ -265,3 +265,58 @@ export type CardPaymentCreateRequest = {
   memo?: string;
   orderIndex?: number;
 };
+
+export type SpreadsheetImportProfile =
+  | "financial-analysis-expense"
+  | "financial-analysis-income"
+  | "financial-analysis-recurring";
+
+export type SpreadsheetImportPreviewRow = {
+  rowNumber: number;
+  date: string;
+  amount: string;
+  payee: string;
+  description: string;
+  note: string;
+  categoryPath: string[];
+  project: string | null;
+  accountId: string | null;
+  cardId: string | null;
+  suggestion: {
+    accountId: string | null;
+    cardId: string | null;
+    categoryPath: string[];
+    project: string | null;
+    evidenceCount: number;
+  } | null;
+  appliedSuggestionFields: string[];
+  raw: string[];
+};
+
+export type SpreadsheetImportIssue = {
+  level: "warning" | "error";
+  rowNumber?: number;
+  message: string;
+};
+
+export type SpreadsheetImportPreview = {
+  fileName: string;
+  sheets: Array<{
+    name: string;
+    rowCount: number;
+    suggestion: SpreadsheetImportProfile | null;
+  }>;
+  selectedSheetName: string | null;
+  selectedProfile: SpreadsheetImportProfile | null;
+  targetKind: "transaction";
+  canImport: boolean;
+  issues: SpreadsheetImportIssue[];
+  previewRows: SpreadsheetImportPreviewRow[];
+};
+
+export type SpreadsheetImportResult = {
+  importedCount: number;
+  targetKind: "transaction";
+  selectedSheetName: string | null;
+  selectedProfile: SpreadsheetImportProfile | null;
+};

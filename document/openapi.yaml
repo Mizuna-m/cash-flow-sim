@@ -23,6 +23,7 @@ tags:
   - name: CardPayments
   - name: Simulation
   - name: SimulationComparison
+  - name: Import
 paths:
   /api/health:
     get:
@@ -264,6 +265,60 @@ paths:
                     $ref: "#/components/schemas/Transaction"
         "400":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/import/spreadsheet:
+    post:
+      tags: [Import]
+      summary: Preview or import spreadsheet rows
+      operationId: importSpreadsheet
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                mode:
+                  type: string
+                  enum: [preview, import]
+                  default: preview
+                sheetName:
+                  type: string
+                profile:
+                  $ref: "#/components/schemas/SpreadsheetImportProfile"
+      responses:
+        "200":
+          description: Spreadsheet preview
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [preview]
+                properties:
+                  preview:
+                    $ref: "#/components/schemas/SpreadsheetImportPreview"
+        "201":
+          description: Spreadsheet imported
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [preview, result]
+                properties:
+                  preview:
+                    $ref: "#/components/schemas/SpreadsheetImportPreview"
+                  result:
+                    $ref: "#/components/schemas/SpreadsheetImportResult"
+        "400":
+          description: Validation or import error
           content:
             application/json:
               schema:
@@ -1324,6 +1379,155 @@ components:
           minimum: 0
         cardPaymentForecastTotalAmount:
           type: string
+
+    SpreadsheetImportProfile:
+      type: string
+      enum:
+        [
+          financial-analysis-expense,
+          financial-analysis-income,
+          financial-analysis-recurring
+        ]
+
+    SpreadsheetImportIssue:
+      type: object
+      required: [level, message]
+      properties:
+        level:
+          type: string
+          enum: [warning, error]
+        rowNumber:
+          type: integer
+        message:
+          type: string
+
+    SpreadsheetImportPreviewRow:
+      type: object
+      required:
+        [rowNumber, date, amount, payee, description, note, categoryPath, project, accountId, cardId, suggestion, appliedSuggestionFields, raw]
+      properties:
+        rowNumber:
+          type: integer
+        date:
+          type: string
+          format: date
+        amount:
+          type: string
+        payee:
+          type: string
+        description:
+          type: string
+        note:
+          type: string
+        categoryPath:
+          type: array
+          items:
+            type: string
+        project:
+          anyOf:
+            - type: string
+            - type: "null"
+        accountId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        cardId:
+          anyOf:
+            - $ref: "#/components/schemas/UuidLike"
+            - type: "null"
+        suggestion:
+          anyOf:
+            - type: object
+              required: [accountId, cardId, categoryPath, project, evidenceCount]
+              properties:
+                accountId:
+                  anyOf:
+                    - $ref: "#/components/schemas/UuidLike"
+                    - type: "null"
+                cardId:
+                  anyOf:
+                    - $ref: "#/components/schemas/UuidLike"
+                    - type: "null"
+                categoryPath:
+                  type: array
+                  items:
+                    type: string
+                project:
+                  anyOf:
+                    - type: string
+                    - type: "null"
+                evidenceCount:
+                  type: integer
+            - type: "null"
+        appliedSuggestionFields:
+          type: array
+          items:
+            type: string
+        raw:
+          type: array
+          items:
+            type: string
+
+    SpreadsheetImportPreview:
+      type: object
+      required:
+        [fileName, sheets, selectedSheetName, selectedProfile, targetKind, canImport, issues, previewRows]
+      properties:
+        fileName:
+          type: string
+        sheets:
+          type: array
+          items:
+            type: object
+            required: [name, rowCount, suggestion]
+            properties:
+              name:
+                type: string
+              rowCount:
+                type: integer
+              suggestion:
+                anyOf:
+                  - $ref: "#/components/schemas/SpreadsheetImportProfile"
+                  - type: "null"
+        selectedSheetName:
+          anyOf:
+            - type: string
+            - type: "null"
+        selectedProfile:
+          anyOf:
+            - $ref: "#/components/schemas/SpreadsheetImportProfile"
+            - type: "null"
+        targetKind:
+          type: string
+          enum: [transaction]
+        canImport:
+          type: boolean
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpreadsheetImportIssue"
+        previewRows:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpreadsheetImportPreviewRow"
+
+    SpreadsheetImportResult:
+      type: object
+      required: [importedCount, targetKind, selectedSheetName, selectedProfile]
+      properties:
+        importedCount:
+          type: integer
+        targetKind:
+          type: string
+          enum: [transaction]
+        selectedSheetName:
+          anyOf:
+            - type: string
+            - type: "null"
+        selectedProfile:
+          anyOf:
+            - $ref: "#/components/schemas/SpreadsheetImportProfile"
+            - type: "null"
 
     UuidLike:
       type: string

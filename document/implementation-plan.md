@@ -266,7 +266,8 @@ Next.js App Router
 
 * ScheduledEvent の ON/OFF
 * シナリオ比較
-* CSV または手動投入前提の初回データ投入導線
+* CSV / ODS インポート前提の初回データ投入導線
+* 列マッピング確認と dry-run
 * 既存スプレッドシートからの最小移行
 
 完了条件:
