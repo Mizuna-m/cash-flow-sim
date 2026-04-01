@@ -12,7 +12,7 @@ export type BuiltSimulation = {
   startDate: string;
   endDate: string;
   forecastSummary: {
-    actualsThroughDate: string | null;
+    settledThroughDate: string | null;
     firstForecastDate: string | null;
     forecastDays: number;
     dailySpendForecastCount: number;
@@ -148,7 +148,7 @@ function buildForecastSummary(input: {
   dailySpendForecastEvents: SimulationEvent[];
   cardPaymentForecastEvents: SimulationEvent[];
 }) {
-  const actualsThroughDate =
+  const settledThroughDate =
     [...input.transactions.map((transaction) => transaction.date)].sort().at(-1) ?? null;
   const forecastDates = [
     ...input.dailySpendForecastEvents.map((event) => event.date),
@@ -164,7 +164,7 @@ function buildForecastSummary(input: {
   );
 
   return {
-    actualsThroughDate,
+    settledThroughDate,
     firstForecastDate: forecastDates[0] ?? null,
     forecastDays: new Set(forecastDates).size,
     dailySpendForecastCount: input.dailySpendForecastEvents.length,
@@ -251,8 +251,9 @@ export async function buildDatabaseSimulation(
     endDate,
     threshold: String(appEnv.SHORT_THRESHOLD),
     defaultCardId,
-    initialTheoreticalBalance: initialBalance.toFixed(2),
+    initialProjectedCash: initialBalance.toFixed(2),
     initialActualBalance: initialBalance.toFixed(2),
+    initialPlannedOutflow: "0.00",
     liquidAccounts: data.accounts
       .filter(
         (account): account is (typeof data.accounts)[number] & { type: "cash" | "bank" } =>

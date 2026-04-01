@@ -106,6 +106,11 @@
 * ブラウザ画面確認
 * seed / import の再適用
 
+補足:
+
+* `curl` などで API 応答確認をするときは、原則 `podman compose restart` の完了後に行う
+* restart 前に叩くと、ローカル build 済みでも compose 上の古い app 応答を見てしまうことがある
+
 ---
 
 ### 2.2 DB 変更時の確認

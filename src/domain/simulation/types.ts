@@ -6,6 +6,8 @@ export type SimulationEventKind =
   | "card-payment"
   | "card-payment-forecast";
 
+export type SimulationLifecycle = "planned" | "confirmed" | "settled";
+
 export type SimulationEvent = {
   id: string;
   date: string;
@@ -27,10 +29,12 @@ export type SimulationEvent = {
 
 export type DailyEventSummary = {
   totalCount: number;
-  actualCount: number;
-  forecastCount: number;
-  actualAmount: string;
-  forecastAmount: string;
+  plannedCount: number;
+  confirmedCount: number;
+  settledCount: number;
+  plannedAmount: string;
+  confirmedAmount: string;
+  settledAmount: string;
   kinds: SimulationEventKind[];
 };
 
@@ -38,6 +42,7 @@ export type DailyEventExplanation = {
   id: string;
   kind: SimulationEventKind;
   source: "actual" | "forecast";
+  lifecycle: SimulationLifecycle;
   label: string;
   detail: string;
   amount: string;
@@ -51,17 +56,18 @@ export type DailyEventExplanation = {
 
 export type DailySimulationSnapshot = {
   date: string;
-  theoreticalBalance: string;
-  actualBalance: string;
+  projectedCash: string;
+  cash: string;
+  plannedOutflow: string;
   short: boolean;
-  cardBalances: Record<string, string>;
-  liquidAccountBalances: Array<{
+  cardDebt: Record<string, string>;
+  cashByAccount: Array<{
     accountId: string;
     name: string;
     type: "cash" | "bank";
     balance: string;
   }>;
-  negativeLiquidAccountIds: string[];
+  negativeCashAccountIds: string[];
   eventSummary: DailyEventSummary;
   events: DailyEventExplanation[];
 };
@@ -71,8 +77,9 @@ export type SimulationInput = {
   endDate: string;
   threshold: string;
   defaultCardId: string;
-  initialTheoreticalBalance: string;
+  initialProjectedCash: string;
   initialActualBalance: string;
+  initialPlannedOutflow?: string;
   liquidAccounts: Array<{
     id: string;
     name: string;

@@ -16,7 +16,7 @@ export async function SimulationPreview() {
     startDate: "2026-03-01",
     endDate: "2026-03-06",
     forecastSummary: {
-      actualsThroughDate: "2026-03-03",
+      settledThroughDate: "2026-03-03",
       firstForecastDate: "2026-03-05",
       forecastDays: 2,
       dailySpendForecastCount: 1,
@@ -28,8 +28,8 @@ export async function SimulationPreview() {
   const { snapshots, source, startDate, endDate } = simulation;
   const shortDays = snapshots.filter((snapshot) => snapshot.short).length;
   const latestSnapshot = snapshots.at(-1);
-  const minimumActual = snapshots.reduce((minimum, snapshot) => {
-    return Number(snapshot.actualBalance) < Number(minimum.actualBalance) ? snapshot : minimum;
+  const minimumCash = snapshots.reduce((minimum, snapshot) => {
+    return Number(snapshot.cash) < Number(minimum.cash) ? snapshot : minimum;
   }, snapshots[0]);
 
   return (
@@ -61,18 +61,18 @@ export async function SimulationPreview() {
           <p className="mt-2 text-2xl font-semibold text-ink">{shortDays}</p>
         </article>
         <article className="rounded-[1.5rem] border border-ink/10 bg-sand/55 px-5 py-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink/50">Latest actual</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink/50">Latest cash</p>
           <p className="mt-2 text-2xl font-semibold text-ink">
-            {latestSnapshot ? formatYen(latestSnapshot.actualBalance) : "-"}
+            {latestSnapshot ? formatYen(latestSnapshot.cash) : "-"}
           </p>
         </article>
         <article className="rounded-[1.5rem] border border-ink/10 bg-ink px-5 py-4 text-sand">
-          <p className="text-xs uppercase tracking-[0.18em] text-sand/55">Lowest actual</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-sand/55">Lowest cash</p>
           <p className="mt-2 text-2xl font-semibold text-white">
-            {minimumActual ? formatYen(minimumActual.actualBalance) : "-"}
+            {minimumCash ? formatYen(minimumCash.cash) : "-"}
           </p>
           <p className="mt-2 text-sm text-sand/72">
-            {minimumActual ? `${minimumActual.date} が底です` : "snapshot がありません"}
+            {minimumCash ? `${minimumCash.date} が底です` : "snapshot がありません"}
           </p>
         </article>
       </div>
@@ -82,9 +82,10 @@ export async function SimulationPreview() {
           <thead>
             <tr className="text-xs uppercase tracking-[0.2em] text-ink/50">
               <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Theoretical</th>
-              <th className="px-4 py-2">Actual</th>
-              <th className="px-4 py-2">Cards</th>
+              <th className="px-4 py-2">Projected Cash</th>
+              <th className="px-4 py-2">Cash</th>
+              <th className="px-4 py-2">Planned Outflow</th>
+              <th className="px-4 py-2">Card Debt</th>
               <th className="px-4 py-2">Status</th>
             </tr>
           </thead>
@@ -97,14 +98,15 @@ export async function SimulationPreview() {
                 }`}
               >
                 <td className="rounded-l-2xl px-4 py-4 font-medium">{snapshot.date}</td>
-                <td className="px-4 py-4">{formatYen(snapshot.theoreticalBalance)}</td>
-                <td className="px-4 py-4">{formatYen(snapshot.actualBalance)}</td>
+                <td className="px-4 py-4">{formatYen(snapshot.projectedCash)}</td>
+                <td className="px-4 py-4">{formatYen(snapshot.cash)}</td>
+                <td className="px-4 py-4">{formatYen(snapshot.plannedOutflow)}</td>
                 <td className="px-4 py-4">
                   <div className="flex flex-wrap gap-2">
-                    {Object.entries(snapshot.cardBalances).length === 0 ? (
+                    {Object.entries(snapshot.cardDebt).length === 0 ? (
                       <span className="rounded-full bg-sand px-3 py-1 text-xs text-ink/55">none</span>
                     ) : (
-                      Object.entries(snapshot.cardBalances).map(([cardId, amount]) => (
+                      Object.entries(snapshot.cardDebt).map(([cardId, amount]) => (
                         <span
                           key={cardId}
                           className="rounded-full bg-sand px-3 py-1 text-xs font-medium text-ink/75"

@@ -16,13 +16,13 @@ test("sortSimulationEvents sorts by date then order index then id", () => {
   );
 });
 
-test("simulateRange tracks theoretical, actual, and card balances across days", () => {
+test("simulateRange tracks projected cash, cash, and card debt across days", () => {
   const snapshots = simulateRange({
     startDate: "2026-03-01",
     endDate: "2026-03-04",
     threshold: "0",
     defaultCardId: "default-card",
-    initialTheoreticalBalance: "1000",
+    initialProjectedCash: "1000",
     initialActualBalance: "1000",
     liquidAccounts: [
       {
@@ -69,13 +69,15 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
     ]
   });
 
-  assert.equal(snapshots[0]?.theoreticalBalance, "1200.00");
-  assert.equal(snapshots[0]?.actualBalance, "1200.00");
+  assert.equal(snapshots[0]?.projectedCash, "1200.00");
+  assert.equal(snapshots[0]?.cash, "1200.00");
+  assert.equal(snapshots[0]?.plannedOutflow, "0.00");
 
-  assert.equal(snapshots[1]?.theoreticalBalance, "1120.00");
-  assert.equal(snapshots[1]?.actualBalance, "1120.00");
-  assert.deepEqual(snapshots[1]?.cardBalances, {});
-  assert.deepEqual(snapshots[1]?.liquidAccountBalances, [
+  assert.equal(snapshots[1]?.projectedCash, "1120.00");
+  assert.equal(snapshots[1]?.cash, "1120.00");
+  assert.equal(snapshots[1]?.plannedOutflow, "0.00");
+  assert.deepEqual(snapshots[1]?.cardDebt, {});
+  assert.deepEqual(snapshots[1]?.cashByAccount, [
     {
       accountId: "main-bank",
       name: "Main Bank",
@@ -85,10 +87,12 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
   ]);
   assert.deepEqual(snapshots[1]?.eventSummary, {
     totalCount: 1,
-    actualCount: 1,
-    forecastCount: 0,
-    actualAmount: "-80.00",
-    forecastAmount: "0.00",
+    plannedCount: 0,
+    confirmedCount: 0,
+    settledCount: 1,
+    plannedAmount: "0.00",
+    confirmedAmount: "0.00",
+    settledAmount: "-80.00",
     kinds: ["transaction"]
   });
   assert.deepEqual(snapshots[1]?.events, [
@@ -96,6 +100,7 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
       id: "groceries",
       kind: "transaction",
       source: "actual",
+      lifecycle: "settled",
       label: "transaction",
       detail: "",
       amount: "-80.00",
@@ -105,24 +110,24 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
     }
   ]);
 
-  assert.equal(snapshots[2]?.theoreticalBalance, "820.00");
-  assert.equal(snapshots[2]?.actualBalance, "1120.00");
-  assert.deepEqual(snapshots[2]?.cardBalances, {
-    "main-card": "300.00"
-  });
+  assert.equal(snapshots[2]?.projectedCash, "820.00");
+  assert.equal(snapshots[2]?.cash, "1120.00");
+  assert.equal(snapshots[2]?.plannedOutflow, "300.00");
+  assert.deepEqual(snapshots[2]?.cardDebt, {});
 
-  assert.equal(snapshots[3]?.theoreticalBalance, "820.00");
-  assert.equal(snapshots[3]?.actualBalance, "740.00");
+  assert.equal(snapshots[3]?.projectedCash, "440.00");
+  assert.equal(snapshots[3]?.cash, "1120.00");
+  assert.equal(snapshots[3]?.plannedOutflow, "680.00");
   assert.equal(snapshots[3]?.short, false);
-  assert.deepEqual(snapshots[3]?.cardBalances, {
-    "main-card": "-80.00"
-  });
+  assert.deepEqual(snapshots[3]?.cardDebt, {});
   assert.deepEqual(snapshots[3]?.eventSummary, {
     totalCount: 1,
-    actualCount: 0,
-    forecastCount: 1,
-    actualAmount: "0.00",
-    forecastAmount: "380.00",
+    plannedCount: 1,
+    confirmedCount: 0,
+    settledCount: 0,
+    plannedAmount: "380.00",
+    confirmedAmount: "0.00",
+    settledAmount: "0.00",
     kinds: ["card-payment-forecast"]
   });
   assert.deepEqual(snapshots[3]?.events, [
@@ -130,6 +135,7 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
       id: "card-payment",
       kind: "card-payment-forecast",
       source: "forecast",
+      lifecycle: "planned",
       label: "card-payment-forecast",
       detail: "",
       amount: "380.00",
@@ -140,13 +146,13 @@ test("simulateRange tracks theoretical, actual, and card balances across days", 
   ]);
 });
 
-test("simulateRange does not change aggregate actual balance for balance-event transfers", () => {
+test("simulateRange does not change aggregate cash for balance-event transfers", () => {
   const snapshots = simulateRange({
     startDate: "2026-03-01",
     endDate: "2026-03-01",
     threshold: "0",
     defaultCardId: "default-card",
-    initialTheoreticalBalance: "1000",
+    initialProjectedCash: "1000",
     initialActualBalance: "1000",
     liquidAccounts: [
       {
@@ -175,9 +181,10 @@ test("simulateRange does not change aggregate actual balance for balance-event t
     ]
   });
 
-  assert.equal(snapshots[0]?.theoreticalBalance, "1000.00");
-  assert.equal(snapshots[0]?.actualBalance, "1000.00");
-  assert.deepEqual(snapshots[0]?.liquidAccountBalances, [
+  assert.equal(snapshots[0]?.projectedCash, "1000.00");
+  assert.equal(snapshots[0]?.cash, "1000.00");
+  assert.equal(snapshots[0]?.plannedOutflow, "0.00");
+  assert.deepEqual(snapshots[0]?.cashByAccount, [
     {
       accountId: "main-bank",
       name: "Main Bank",
@@ -193,11 +200,54 @@ test("simulateRange does not change aggregate actual balance for balance-event t
   ]);
   assert.deepEqual(snapshots[0]?.eventSummary, {
     totalCount: 1,
-    actualCount: 1,
-    forecastCount: 0,
-    actualAmount: "100.00",
-    forecastAmount: "0.00",
+    plannedCount: 0,
+    confirmedCount: 0,
+    settledCount: 1,
+    plannedAmount: "0.00",
+    confirmedAmount: "0.00",
+    settledAmount: "100.00",
     kinds: ["balance-event"]
   });
   assert.equal(snapshots[0]?.events[0]?.kind, "balance-event");
+  assert.equal(snapshots[0]?.events[0]?.lifecycle, "settled");
+});
+
+test("simulateRange classifies card usage as confirmed and scheduled items as planned", () => {
+  const snapshots = simulateRange({
+    startDate: "2026-03-01",
+    endDate: "2026-03-02",
+    threshold: "0",
+    defaultCardId: "default-card",
+    initialProjectedCash: "1000",
+    initialActualBalance: "1000",
+    liquidAccounts: [
+      {
+        id: "main-bank",
+        name: "Main Bank",
+        type: "bank",
+        initialBalance: "1000"
+      }
+    ],
+    events: [
+      {
+        id: "card-usage",
+        date: "2026-03-01",
+        kind: "transaction",
+        amount: "-120",
+        orderIndex: 1,
+        cardId: "main-card"
+      },
+      {
+        id: "utility",
+        date: "2026-03-02",
+        kind: "scheduled-event",
+        amount: "-9000",
+        orderIndex: 1,
+        accountId: "main-bank"
+      }
+    ]
+  });
+
+  assert.equal(snapshots[0]?.events[0]?.lifecycle, "confirmed");
+  assert.equal(snapshots[1]?.events[0]?.lifecycle, "planned");
 });

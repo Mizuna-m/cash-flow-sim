@@ -670,6 +670,8 @@ a {
   margin: 14px auto 36px;
   display: grid;
   gap: 22px;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .wire-panel {
@@ -677,6 +679,7 @@ a {
   border: 1px solid #d7d0c4;
   border-radius: 16px;
   box-shadow: 0 16px 38px rgba(23, 33, 43, 0.07);
+  min-width: 0;
 }
 
 .wire-top {
@@ -785,6 +788,7 @@ a {
 
 .wire-section {
   padding: 22px 24px 24px;
+  min-width: 0;
 }
 
 .wire-section-head {
@@ -1101,6 +1105,40 @@ a {
   grid-template-columns: 88px 150px 120px minmax(220px, 1fr) minmax(320px, 1.4fr) 110px;
   gap: 10px;
   align-items: start;
+}
+
+.wire-table-scroll-shell {
+  position: relative;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.wire-table-scroll-shell::before,
+.wire-table-scroll-shell::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  z-index: 2;
+}
+
+.wire-table-scroll-shell::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(255, 253, 249, 0.96), rgba(255, 253, 249, 0));
+}
+
+.wire-table-scroll-shell::after {
+  right: 0;
+  background: linear-gradient(90deg, rgba(255, 253, 249, 0), rgba(255, 253, 249, 0.96));
+}
+
+.wire-table-scroll-shell.has-left-fade::before,
+.wire-table-scroll-shell.has-right-fade::after {
+  opacity: 1;
 }
 
 .wire-table-scroll {
@@ -1423,10 +1461,18 @@ a {
 .wire-forecast-refined .wire-box {
   border-color: rgba(215, 208, 196, 0.45);
   background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.5));
+  max-width: 100%;
+  min-width: 0;
 }
 
 .wire-forecast-refined .wire-actions {
   gap: 10px;
+}
+
+.wire-forecast-account-picker {
+  margin-top: -4px;
+  margin-bottom: 4px;
+  gap: 8px;
 }
 
 .wire-forecast-refined .wire-pill,
@@ -1444,8 +1490,123 @@ a {
   border-bottom-color: rgba(215, 208, 196, 0.62);
 }
 
+.wire-forecast-table {
+  width: max-content;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.wire-forecast-table th,
+.wire-forecast-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(215, 208, 196, 0.62);
+  text-align: left;
+  vertical-align: top;
+}
+
+.wire-forecast-table th {
+  color: #6d7780;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.wire-forecast-table td {
+  background: transparent;
+}
+
+.wire-forecast-table tbody tr:first-child td {
+  border-top: 1px solid rgba(215, 208, 196, 0.62);
+}
+
+.wire-forecast-summary-col {
+  width: 156px;
+  min-width: 156px;
+}
+
+.wire-forecast-events-col {
+  min-width: 280px;
+}
+
+.wire-forecast-flags-col {
+  width: 96px;
+  min-width: 96px;
+}
+
 .wire-forecast-refined .wire-event-note {
-  line-height: 1.55;
+  line-height: 1.32;
+  font-size: 11px;
+}
+
+.wire-forecast-refined .wire-lifecycle-summary {
+  min-width: 0;
+}
+
+.wire-forecast-refined .wire-lifecycle-summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  line-height: 1.18;
+}
+
+.wire-forecast-refined .wire-lifecycle-label {
+  color: #6d7780;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.wire-forecast-refined .wire-lifecycle-summary-values {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.wire-forecast-refined .wire-lifecycle-meta {
+  color: #6d7780;
+  font-size: 11px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.wire-forecast-refined .wire-lifecycle-amount {
+  font-size: 11px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.wire-forecast-refined .wire-event-group {
+  display: grid;
+  gap: 2px;
+  padding-top: 1px;
+}
+
+.wire-forecast-refined .wire-event-group + .wire-event-group {
+  margin-top: 3px;
+}
+
+.wire-forecast-refined .wire-event-group-head {
+  color: #6d7780;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.wire-forecast-refined .wire-forecast-events-stack {
+  gap: 2px;
+}
+
+.wire-forecast-refined .wire-forecast-event-detail,
+.wire-forecast-refined .wire-forecast-event-basis {
+  color: #6d7780;
+  font-size: 10px;
+  line-height: 1.25;
 }
 
 .wire-ledger-refined .wire-table {
@@ -1667,6 +1828,30 @@ a {
   display: grid;
   gap: 12px;
   align-content: start;
+}
+
+.wire-analysis-page {
+  display: grid;
+  gap: 16px;
+}
+
+.wire-analysis-kpis {
+  margin-bottom: 0;
+}
+
+.wire-analysis-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.wire-analysis-box {
+  border-color: rgba(215, 208, 196, 0.45);
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.5));
+}
+
+.wire-analysis-table th:first-child,
+.wire-analysis-table td:first-child {
+  min-width: 220px;
 }
 
 @media (max-width: 1280px) {

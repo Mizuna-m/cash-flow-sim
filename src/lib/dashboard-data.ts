@@ -33,7 +33,7 @@ export async function loadDashboardPayload(
     startDate,
     endDate,
     forecastSummary: {
-      actualsThroughDate: null,
+      settledThroughDate: null,
       firstForecastDate: null,
       forecastDays: 0,
       dailySpendForecastCount: 0,

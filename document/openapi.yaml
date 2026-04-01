@@ -1107,12 +1107,13 @@ components:
       required:
         [
           date,
-          theoreticalBalance,
-          actualBalance,
+          projectedCash,
+          cash,
+          plannedOutflow,
           short,
-          cardBalances,
-          liquidAccountBalances,
-          negativeLiquidAccountIds,
+          cardDebt,
+          cashByAccount,
+          negativeCashAccountIds,
           eventSummary,
           events
         ]
@@ -1120,21 +1121,23 @@ components:
         date:
           type: string
           format: date
-        theoreticalBalance:
+        projectedCash:
           type: string
-        actualBalance:
+        cash:
+          type: string
+        plannedOutflow:
           type: string
         short:
           type: boolean
-        cardBalances:
+        cardDebt:
           type: object
           additionalProperties:
             type: string
-        liquidAccountBalances:
+        cashByAccount:
           type: array
           items:
             $ref: "#/components/schemas/LiquidAccountBalance"
-        negativeLiquidAccountIds:
+        negativeCashAccountIds:
           type: array
           items:
             $ref: "#/components/schemas/UuidLike"
@@ -1162,20 +1165,34 @@ components:
     DailyEventSummary:
       type: object
       required:
-        [totalCount, actualCount, forecastCount, actualAmount, forecastAmount, kinds]
+        [
+          totalCount,
+          plannedCount,
+          confirmedCount,
+          settledCount,
+          plannedAmount,
+          confirmedAmount,
+          settledAmount,
+          kinds
+        ]
       properties:
         totalCount:
           type: integer
           minimum: 0
-        actualCount:
+        plannedCount:
           type: integer
           minimum: 0
-        forecastCount:
+        confirmedCount:
           type: integer
           minimum: 0
-        actualAmount:
+        settledCount:
+          type: integer
+          minimum: 0
+        plannedAmount:
           type: string
-        forecastAmount:
+        confirmedAmount:
+          type: string
+        settledAmount:
           type: string
         kinds:
           type: array
@@ -1193,7 +1210,7 @@ components:
 
     DailyEventExplanation:
       type: object
-      required: [id, kind, source, label, detail, amount, orderIndex, cardId]
+      required: [id, kind, source, lifecycle, label, detail, amount, orderIndex, cardId]
       properties:
         id:
           type: string
@@ -1211,6 +1228,9 @@ components:
         source:
           type: string
           enum: [actual, forecast]
+        lifecycle:
+          type: string
+          enum: [planned, confirmed, settled]
         label:
           type: string
         detail:
@@ -1323,31 +1343,34 @@ components:
       required:
         [
           shortCountDelta,
-          projectedShortCountDelta,
-          lowestTheoreticalBalanceDelta,
-          lowestActualBalanceDelta,
-          endingTheoreticalBalanceDelta,
-          endingActualBalanceDelta
+          projectedNegativeDaysDelta,
+          lowestProjectedCashDelta,
+          lowestCashDelta,
+          endingPlannedOutflowDelta,
+          endingProjectedCashDelta,
+          endingCashDelta
         ]
       properties:
         shortCountDelta:
           type: integer
-        projectedShortCountDelta:
+        projectedNegativeDaysDelta:
           type: integer
-        lowestTheoreticalBalanceDelta:
+        lowestProjectedCashDelta:
           type: string
-        lowestActualBalanceDelta:
+        lowestCashDelta:
           type: string
-        endingTheoreticalBalanceDelta:
+        endingPlannedOutflowDelta:
           type: string
-        endingActualBalanceDelta:
+        endingProjectedCashDelta:
+          type: string
+        endingCashDelta:
           type: string
 
     ForecastSummary:
       type: object
       required:
         [
-          actualsThroughDate,
+          settledThroughDate,
           firstForecastDate,
           forecastDays,
           dailySpendForecastCount,
@@ -1356,7 +1379,7 @@ components:
           cardPaymentForecastTotalAmount
         ]
       properties:
-        actualsThroughDate:
+        settledThroughDate:
           anyOf:
             - type: string
               format: date

@@ -81,10 +81,21 @@ Status の意味:
 * 残高モデル再設計に向けて、現行 API / 型 / UI ラベルの読み替え計画を `balance-model-transition-plan.md` に整理し始めた
 * 残高モデル移行は deprecated を厚く持たず、責務のまとまりごとに小さめの破壊的更新を入れて整合を毎回取り切る方針にした
 * 残高モデル変更の抜け漏れ防止用に、ドキュメント・API・型・UI・テスト・手動確認を横断したチェックリスト `balance-model-change-checklist.md` を追加した
+* simulation response の主な残高語を `cash / cashByAccount / cardDebt / projectedCash / plannedOutflow` へ更新し、`plannedOutflow` も差分値ではなく future event 由来で積み上がる値へ寄せた
+* compare / forecast summary も `settledThroughDate`、`projectedNegativeDaysDelta` など意味が伝わる名前へ更新した
+* simulation の日別 `events` に `planned / confirmed / settled` の lifecycle を追加し、forecast table で予定・カード確定・出納済を読み分けやすくした
+* 日別 `eventSummary` も `actual / forecast` ではなく `planned / confirmed / settled` の件数・金額集計へ更新し、ライフサイクルと整合するようにした
+* `simulation-ux-alignment-review.md` を追加し、仕様と現在 UI の整合レビュー、および次は forecast を lifecycle 主体で読めるようにする方針を整理した
+* UX の基本方針として、`short` や compare は補助であり、主役は日次残高・口座別残高・イベント lifecycle などの fact 整理であることを仕様文書へ反映した
+* `projectedCash` は補助アラートではなく、fact から導く重要な計算済み観測値として扱う方針を仕様文書へ反映した
+* `forecast` 表に `planned / confirmed / settled` の日次サマリ列を追加し、イベント明細も lifecycle ごとにまとまり表示する UI へ寄せた
+* `simulation` も `short` 中心ではなく、`cash / projectedCash / plannedOutflow / cardDebt` の fact を前面に出し、compare も差分事実を読む寄りの文言へ更新した
+* `simulation` の compare パネルをさらに fact 寄りにし、候補カードと比較結果カードを `projected cash / cash / planned outflow` の差分観察として読める文言へ寄せた
+* `curl` による API 確認は `podman compose restart` 後に行う、という実運用上の注意を `development-playbook.md` に追記した
 
 次に着手するべきこと:
 
-* balance model の読み替え計画に沿って、まずチェックリスト単位で `actualBalance / liquidAccountBalances / cardBalances` の rename 範囲を固める
+* forecast を lifecycle 主体で読めるようにし、`planned / confirmed / settled` の日次サマリと明細グルーピングを UI へ反映する
 * simulation の増分計算 / 月次スナップショットなど長期運用向けの高速化方針を決める
 * accounts / liquid account の表示順を明示管理するか判断する
 * カード引落予測に月次の支払日オーバーライドを入れるか判断する
@@ -136,7 +147,7 @@ Status の意味:
 | T20 | 取引入力画面 | DONE | T18 | Transaction 登録できる |
 | T21 | 予定入力画面 | DONE | T18 | ScheduledEvent 登録できる |
 | T22 | シミュレーション結果画面 | DONE | T17 | 日次の資金繰り結果と比較表示が見える |
-| T23 | Project / Category / Group 集計画面 | TODO | T18 | Project別、種別階層別、種別グループ相当の集計が見える |
+| T23 | Project / Category / Group 集計画面 | DONE | T18 | `/analysis` で Project別、種別階層別、種別グループ相当の集計と月次 net が見える |
 | T24 | イベント ON/OFF | DOING | T21,T22 | ScheduledEvent の無効化 PATCH と比較反映を追加済み。再有効化導線は限定的 |
 | T25 | シナリオ比較 UI/API | DOING | T24 | compare API、差分表示、手動選択 UI、複数比較保持を追加済み。比較の保存やベース切替は未実装 |
 | T26 | 初回移行導線 | DOING | T18 | CSV/ODS の dry-run と本投入ができ、既存列 `日付・取引先・取引先詳細・内容・金額・備考・種別・プロジェクト` を欠落なく対応付けられる |

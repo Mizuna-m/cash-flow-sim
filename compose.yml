@@ -20,6 +20,7 @@ services:
 
   db:
     image: docker.io/library/postgres:16
+    shm_size: 256m
     ports:
       - "5432:5432"
     environment:

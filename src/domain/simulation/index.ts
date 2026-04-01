@@ -4,6 +4,7 @@ import {
   type DailyEventSummary,
   type DailySimulationSnapshot,
   type SimulationEvent,
+  type SimulationLifecycle,
   type SimulationInput
 } from "@/src/domain/simulation/types";
 
@@ -65,10 +66,11 @@ function formatLiquidAccountBalances(
 
 function applyEvent(
   event: SimulationEvent,
-  theoreticalBalance: Decimal,
-  actualBalance: Decimal,
-  cardBalances: Map<string, Decimal>,
-  liquidAccountBalances: Map<string, Decimal>,
+  projectedCash: Decimal,
+  cash: Decimal,
+  plannedOutflow: Decimal,
+  cardDebt: Map<string, Decimal>,
+  cashByAccount: Map<string, Decimal>,
   defaultCardId: string
 ) {
   const amount = new Decimal(event.amount);
@@ -77,51 +79,52 @@ function applyEvent(
   switch (event.kind) {
     case "transaction":
       if (amount.isNegative()) {
-        theoreticalBalance = theoreticalBalance.plus(amount);
+        projectedCash = projectedCash.plus(amount);
 
         if (event.cardId) {
-          incrementCardBalance(cardBalances, cardId, amount.abs());
+          incrementCardBalance(cardDebt, cardId, amount.abs());
         } else if (event.accountId) {
-          actualBalance = actualBalance.plus(amount);
-          incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount);
+          cash = cash.plus(amount);
+          incrementLiquidAccountBalance(cashByAccount, event.accountId, amount);
         }
       } else {
-        theoreticalBalance = theoreticalBalance.plus(amount);
-        actualBalance = actualBalance.plus(amount);
+        projectedCash = projectedCash.plus(amount);
+        cash = cash.plus(amount);
 
         if (event.accountId) {
-          incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount);
+          incrementLiquidAccountBalance(cashByAccount, event.accountId, amount);
         }
       }
       break;
     case "scheduled-event":
-      theoreticalBalance = theoreticalBalance.plus(amount);
+      projectedCash = projectedCash.plus(amount);
 
-      if (event.cardId && amount.isNegative()) {
-        incrementCardBalance(cardBalances, cardId, amount.abs());
-      } else if (event.accountId) {
-        incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount);
+      if (amount.isNegative()) {
+        plannedOutflow = plannedOutflow.plus(amount.abs());
       }
       break;
     case "daily-spend-forecast":
-      theoreticalBalance = theoreticalBalance.plus(amount);
-      incrementCardBalance(cardBalances, cardId, amount.abs());
+      projectedCash = projectedCash.plus(amount);
+      plannedOutflow = plannedOutflow.plus(amount.abs());
       break;
     case "card-payment":
-    case "card-payment-forecast":
-      actualBalance = actualBalance.minus(amount.abs());
-      incrementCardBalance(cardBalances, cardId, amount.abs().negated());
+      cash = cash.minus(amount.abs());
+      incrementCardBalance(cardDebt, cardId, amount.abs().negated());
 
       if (event.accountId) {
-        incrementLiquidAccountBalance(liquidAccountBalances, event.accountId, amount.abs().negated());
+        incrementLiquidAccountBalance(cashByAccount, event.accountId, amount.abs().negated());
       }
+      break;
+    case "card-payment-forecast":
+      projectedCash = projectedCash.minus(amount.abs());
+      plannedOutflow = plannedOutflow.plus(amount.abs());
       break;
     case "balance-event":
       if (event.fromAccountId) {
-        incrementLiquidAccountBalance(liquidAccountBalances, event.fromAccountId, amount.negated());
+        incrementLiquidAccountBalance(cashByAccount, event.fromAccountId, amount.negated());
       }
       if (event.toAccountId) {
-        incrementLiquidAccountBalance(liquidAccountBalances, event.toAccountId, amount);
+        incrementLiquidAccountBalance(cashByAccount, event.toAccountId, amount);
       }
       break;
     default:
@@ -129,8 +132,9 @@ function applyEvent(
   }
 
   return {
-    theoreticalBalance,
-    actualBalance
+    projectedCash,
+    cash,
+    plannedOutflow
   };
 }
 
@@ -151,13 +155,30 @@ function isForecastEvent(kind: SimulationEvent["kind"]) {
   return kind === "daily-spend-forecast" || kind === "card-payment-forecast";
 }
 
+function resolveLifecycle(event: SimulationEvent): SimulationLifecycle {
+  switch (event.kind) {
+    case "scheduled-event":
+    case "daily-spend-forecast":
+    case "card-payment-forecast":
+      return "planned";
+    case "transaction":
+      return Number(event.amount) < 0 && Boolean(event.cardId) ? "confirmed" : "settled";
+    case "balance-event":
+    case "card-payment":
+    default:
+      return "settled";
+  }
+}
+
 function buildEmptySummary(): DailyEventSummary {
   return {
     totalCount: 0,
-    actualCount: 0,
-    forecastCount: 0,
-    actualAmount: "0.00",
-    forecastAmount: "0.00",
+    plannedCount: 0,
+    confirmedCount: 0,
+    settledCount: 0,
+    plannedAmount: "0.00",
+    confirmedAmount: "0.00",
+    settledAmount: "0.00",
     kinds: []
   };
 }
@@ -167,32 +188,43 @@ function summarizeEvents(events: SimulationEvent[]): DailyEventSummary {
     return buildEmptySummary();
   }
 
-  let actualAmount = new Decimal(0);
-  let forecastAmount = new Decimal(0);
-  let actualCount = 0;
-  let forecastCount = 0;
+  let plannedAmount = new Decimal(0);
+  let confirmedAmount = new Decimal(0);
+  let settledAmount = new Decimal(0);
+  let plannedCount = 0;
+  let confirmedCount = 0;
+  let settledCount = 0;
   const kinds = new Set<SimulationEvent["kind"]>();
 
   for (const event of events) {
     const amount = new Decimal(event.amount);
+    const lifecycle = resolveLifecycle(event);
     kinds.add(event.kind);
 
-    if (isForecastEvent(event.kind)) {
-      forecastCount += 1;
-      forecastAmount = forecastAmount.plus(amount);
+    if (lifecycle === "planned") {
+      plannedCount += 1;
+      plannedAmount = plannedAmount.plus(amount);
       continue;
     }
 
-    actualCount += 1;
-    actualAmount = actualAmount.plus(amount);
+    if (lifecycle === "confirmed") {
+      confirmedCount += 1;
+      confirmedAmount = confirmedAmount.plus(amount);
+      continue;
+    }
+
+    settledCount += 1;
+    settledAmount = settledAmount.plus(amount);
   }
 
   return {
     totalCount: events.length,
-    actualCount,
-    forecastCount,
-    actualAmount: actualAmount.toFixed(2),
-    forecastAmount: forecastAmount.toFixed(2),
+    plannedCount,
+    confirmedCount,
+    settledCount,
+    plannedAmount: plannedAmount.toFixed(2),
+    confirmedAmount: confirmedAmount.toFixed(2),
+    settledAmount: settledAmount.toFixed(2),
     kinds: [...kinds].sort(),
   };
 }
@@ -205,6 +237,7 @@ function buildEventExplanations(
     id: event.id,
     kind: event.kind,
     source: event.source ?? (isForecastEvent(event.kind) ? "forecast" : "actual"),
+    lifecycle: resolveLifecycle(event),
     label: event.label ?? event.kind,
     detail: event.detail ?? "",
     amount: new Decimal(event.amount).toFixed(2),
@@ -216,10 +249,11 @@ function buildEventExplanations(
 
 export function simulateRange(input: SimulationInput): DailySimulationSnapshot[] {
   const threshold = new Decimal(input.threshold);
-  let theoreticalBalance = new Decimal(input.initialTheoreticalBalance);
-  let actualBalance = new Decimal(input.initialActualBalance);
-  const cardBalances = new Map<string, Decimal>();
-  const liquidAccountBalances = new Map(
+  let projectedCash = new Decimal(input.initialProjectedCash);
+  let cash = new Decimal(input.initialActualBalance);
+  let plannedOutflow = new Decimal(input.initialPlannedOutflow ?? "0");
+  const cardDebt = new Map<string, Decimal>();
+  const cashByAccount = new Map(
     input.liquidAccounts.map((account) => [account.id, new Decimal(account.initialBalance)])
   );
   const dailyEvents = new Map<string, SimulationEvent[]>();
@@ -236,32 +270,35 @@ export function simulateRange(input: SimulationInput): DailySimulationSnapshot[]
     for (const event of events) {
       const next = applyEvent(
         event,
-        theoreticalBalance,
-        actualBalance,
-        cardBalances,
-        liquidAccountBalances,
+        projectedCash,
+        cash,
+        plannedOutflow,
+        cardDebt,
+        cashByAccount,
         input.defaultCardId
       );
-      theoreticalBalance = next.theoreticalBalance;
-      actualBalance = next.actualBalance;
+      projectedCash = next.projectedCash;
+      cash = next.cash;
+      plannedOutflow = next.plannedOutflow;
     }
 
-    const liquidAccountSnapshot = formatLiquidAccountBalances(
-      liquidAccountBalances,
+    const cashByAccountSnapshot = formatLiquidAccountBalances(
+      cashByAccount,
       input.liquidAccounts
     );
-    const negativeLiquidAccountIds = liquidAccountSnapshot
+    const negativeCashAccountIds = cashByAccountSnapshot
       .filter((account) => new Decimal(account.balance).lessThan(0))
       .map((account) => account.accountId);
 
     return {
       date,
-      theoreticalBalance: theoreticalBalance.toFixed(2),
-      actualBalance: actualBalance.toFixed(2),
-      short: actualBalance.lessThan(threshold) || negativeLiquidAccountIds.length > 0,
-      cardBalances: formatCardBalances(cardBalances),
-      liquidAccountBalances: liquidAccountSnapshot,
-      negativeLiquidAccountIds,
+      projectedCash: projectedCash.toFixed(2),
+      cash: cash.toFixed(2),
+      plannedOutflow: plannedOutflow.toFixed(2),
+      short: cash.lessThan(threshold) || negativeCashAccountIds.length > 0,
+      cardDebt: formatCardBalances(cardDebt),
+      cashByAccount: cashByAccountSnapshot,
+      negativeCashAccountIds,
       eventSummary: summarizeEvents(events),
       events: buildEventExplanations(events, input.defaultCardId)
     };

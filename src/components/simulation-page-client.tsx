@@ -30,9 +30,9 @@ type SimulationState = DashboardPayload & {
 type SimulationChartRow = {
   label: string;
   date: string;
-  theoretical: number;
-  actual: number;
-  comparisonTheoretical: number | null;
+  projectedCash: number;
+  cash: number;
+  comparisonProjectedCash: number | null;
 };
 
 function formatCurrency(value: number | string) {
@@ -41,6 +41,12 @@ function formatCurrency(value: number | string) {
     currency: "JPY",
     maximumFractionDigits: 0
   }).format(Number(value));
+}
+
+function formatSignedCurrency(value: number | string) {
+  const numeric = Number(value);
+  const prefix = numeric > 0 ? "+" : "";
+  return `${prefix}${formatCurrency(numeric)}`;
 }
 
 function formatDate(value: string) {
@@ -56,17 +62,35 @@ function getLowestSnapshot(simulation: SimulationResponse) {
       return snapshot;
     }
 
-    return Number(snapshot.actualBalance) < Number(lowest.actualBalance) ? snapshot : lowest;
+    return Number(snapshot.cash) < Number(lowest.cash) ? snapshot : lowest;
   }, null);
+}
+
+function getLowestProjectedSnapshot(simulation: SimulationResponse) {
+  return simulation.snapshots.reduce<typeof simulation.snapshots[number] | null>((lowest, snapshot) => {
+    if (!lowest) {
+      return snapshot;
+    }
+
+    return Number(snapshot.projectedCash) < Number(lowest.projectedCash) ? snapshot : lowest;
+  }, null);
+}
+
+function getCardDebtTotal(snapshot: SimulationResponse["snapshots"][number] | undefined) {
+  if (!snapshot) {
+    return 0;
+  }
+
+  return Object.values(snapshot.cardDebt).reduce((sum, amount) => sum + Number(amount), 0);
 }
 
 function getChartData(simulation: SimulationResponse) {
   return simulation.snapshots.map((snapshot) => ({
     label: formatDate(snapshot.date),
     date: snapshot.date,
-    theoretical: Number(snapshot.theoreticalBalance),
-    actual: Number(snapshot.actualBalance),
-    comparisonTheoretical: null as number | null
+    projectedCash: Number(snapshot.projectedCash),
+    cash: Number(snapshot.cash),
+    comparisonProjectedCash: null as number | null
   }));
 }
 
@@ -84,10 +108,10 @@ function getComparisonChartData(
     return {
       label: formatDate(baseSnapshot.date),
       date: baseSnapshot.date,
-      theoretical: Number(baseSnapshot.theoreticalBalance),
-      actual: Number(baseSnapshot.actualBalance),
-      comparisonTheoretical: Number(
-        scenarioSnapshot?.theoreticalBalance ?? baseSnapshot.theoreticalBalance
+      projectedCash: Number(baseSnapshot.projectedCash),
+      cash: Number(baseSnapshot.cash),
+      comparisonProjectedCash: Number(
+        scenarioSnapshot?.projectedCash ?? baseSnapshot.projectedCash
       )
     };
   });
@@ -98,7 +122,7 @@ function getYAxisDomain(data: SimulationChartRow[]) {
     return [0, 100000];
   }
 
-  const values = data.flatMap((item) => [item.theoretical, item.actual]);
+  const values = data.flatMap((item) => [item.projectedCash, item.cash]);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const padding = Math.max((max - min) * 0.14, 20000);
@@ -192,8 +216,14 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
   const [loading, setLoading] = useState(false);
   const [selectedScenarioIds, setSelectedScenarioIds] = useState<string[]>([]);
   const baseChartData = useMemo(() => getChartData(state.simulation), [state.simulation]);
-  const lowest = useMemo(() => getLowestSnapshot(state.simulation), [state.simulation]);
+  const lowestCash = useMemo(() => getLowestSnapshot(state.simulation), [state.simulation]);
+  const lowestProjected = useMemo(
+    () => getLowestProjectedSnapshot(state.simulation),
+    [state.simulation]
+  );
   const shortCount = state.simulation.snapshots.filter((snapshot) => snapshot.short).length;
+  const latestSnapshot = state.simulation.snapshots.at(-1);
+  const latestCardDebtTotal = getCardDebtTotal(latestSnapshot);
   const nextCardPayment = [...state.cardPayments].sort((a, b) => a.date.localeCompare(b.date))[0];
   const scenarioCandidates = useMemo(
     () => buildScenarioCandidates(state.scheduledEvents),
@@ -223,12 +253,12 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
   );
   const yDomain = useMemo(
     () =>
-      chartData.some((item) => item.comparisonTheoretical !== null)
+      chartData.some((item) => item.comparisonProjectedCash !== null)
         ? getNumericYAxisDomain(
             chartData.flatMap((item) => [
-              item.theoretical,
-              item.actual,
-              item.comparisonTheoretical ?? item.theoretical
+              item.projectedCash,
+              item.cash,
+              item.comparisonProjectedCash ?? item.projectedCash
             ])
           )
         : getYAxisDomain(chartData),
@@ -236,27 +266,45 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
   );
 
   const kpis = [
-    { label: "最低残高", value: lowest ? formatCurrency(lowest.actualBalance) : "-", meta: lowest ? lowest.date : "-" },
-    { label: "ショート", value: `${shortCount}日`, meta: "現状判定" },
     {
-      label: "次の引落",
+      label: "latest projected cash",
+      value: latestSnapshot ? formatCurrency(latestSnapshot.projectedCash) : "-",
+      meta: latestSnapshot?.date ?? "-"
+    },
+    {
+      label: "latest cash",
+      value: latestSnapshot ? formatCurrency(latestSnapshot.cash) : "-",
+      meta: latestSnapshot?.date ?? "-"
+    },
+    {
+      label: "latest planned outflow",
+      value: formatCurrency(latestSnapshot?.plannedOutflow ?? "0"),
+      meta: "未決済ぶん"
+    },
+    {
+      label: "latest card debt",
+      value: formatCurrency(latestCardDebtTotal),
+      meta: `${Object.keys(latestSnapshot?.cardDebt ?? {}).length}枚`
+    },
+    {
+      label: "lowest projected cash",
+      value: lowestProjected ? formatCurrency(lowestProjected.projectedCash) : "-",
+      meta: lowestProjected?.date ?? "-"
+    },
+    {
+      label: "lowest cash",
+      value: lowestCash ? formatCurrency(lowestCash.cash) : "-",
+      meta: lowestCash?.date ?? "-"
+    },
+    {
+      label: "next card payment",
       value: nextCardPayment ? formatCurrency(nextCardPayment.amount) : "-",
       meta: nextCardPayment ? nextCardPayment.date : "-"
     },
     {
-      label: "予測開始",
-      value: state.simulation.forecastSummary.firstForecastDate ?? "-",
-      meta: "actual以降"
-    },
-    {
-      label: "予測日数",
-      value: `${state.simulation.forecastSummary.forecastDays}日`,
-      meta: `${state.simulation.forecastSummary.dailySpendForecastCount}件`
-    },
-    {
-      label: "日常支出予測",
-      value: formatCurrency(state.simulation.forecastSummary.dailySpendForecastAverageAmount),
-      meta: "平均/日"
+      label: "account shortage days",
+      value: `${shortCount}日`,
+      meta: "補助指標"
     }
   ];
   async function handleRangeSubmit(formData: FormData) {
@@ -392,10 +440,8 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
     <section className="wire-panel wire-section wire-simulation-refined">
       <div className="wire-section-head">
         <div>
-          <h2 className="wire-section-title">判断ビュー</h2>
-          <p className="wire-section-meta">
-            グラフは大きめ。KPI は判断に使う数だけ残し、比較シナリオ API があるところは実データで返す。
-          </p>
+          <h2 className="wire-section-title">Simulation</h2>
+          <p className="wire-section-meta">cash / projected cash / planned outflow / card debt</p>
         </div>
         <form action={handleRangeSubmit} className="wire-actions">
           <input name="startDate" type="date" defaultValue={state.range.startDate} className="wire-pill-field" />
@@ -420,7 +466,12 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
             <div className="wire-box-head">
               <span className="wire-label">Balance Chart</span>
               <div className="wire-inline-actions">
-                {lowest ? <span className="wire-inline-chip">最低残高 {formatDate(lowest.date)}</span> : null}
+                {lowestProjected ? (
+                  <span className="wire-inline-chip">最低 projected {formatDate(lowestProjected.date)}</span>
+                ) : null}
+                {lowestCash ? (
+                  <span className="wire-inline-chip">最低 cash {formatDate(lowestCash.date)}</span>
+                ) : null}
                 {firstComparisonScenario ? (
                   <>
                     <span className="wire-inline-chip">{firstComparisonScenario.label}</span>
@@ -467,17 +518,17 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                       background: "rgba(255,253,249,0.98)"
                     }}
                   />
-                  {lowest ? (
+                  {lowestProjected ? (
                     <ReferenceLine
-                      x={formatDate(lowest.date)}
+                      x={formatDate(lowestProjected.date)}
                       stroke="#c65b4d"
                       strokeDasharray="7 7"
                     />
                   ) : null}
                   <Line
                     type="monotone"
-                    dataKey="theoretical"
-                    name="base theoretical"
+                    dataKey="projectedCash"
+                    name="base projected cash"
                     stroke={firstComparisonScenario ? "#8a99ab" : "#376ed4"}
                     strokeWidth={firstComparisonScenario ? 2 : 3}
                     dot={false}
@@ -485,8 +536,8 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                   {firstComparisonScenario ? (
                     <Line
                       type="monotone"
-                      dataKey="comparisonTheoretical"
-                      name="scenario theoretical"
+                      dataKey="comparisonProjectedCash"
+                      name="scenario projected cash"
                       stroke="#c65b4d"
                       strokeWidth={3}
                       dot={false}
@@ -494,8 +545,8 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                   ) : null}
                   <Line
                     type="monotone"
-                    dataKey="actual"
-                    name="actual"
+                    dataKey="cash"
+                    name="cash"
                     stroke="#4f7d60"
                     strokeWidth={3}
                     strokeDasharray={firstComparisonScenario ? "6 6" : undefined}
@@ -506,10 +557,7 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
             </div>
             <div className="wire-inline-actions wire-chart-notes">
               <span className="wire-row-sub">
-                actuals {state.simulation.forecastSummary.actualsThroughDate ?? "-"}
-              </span>
-              <span className="wire-row-sub">
-                引落予測 {state.simulation.forecastSummary.cardPaymentForecastCount}件
+                実績反映最終日 {state.simulation.forecastSummary.settledThroughDate ?? "-"}
               </span>
               {comparison ? (
                 <span className="wire-row-sub">{comparison.scenarios.length}件比較中</span>
@@ -520,7 +568,7 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
 
         <div className="wire-box wire-risk-panel">
           <div className="wire-box-head">
-            <span className="wire-label">Risk / Compare</span>
+            <span className="wire-label">Compare Facts</span>
           </div>
           <div className="wire-list wire-risk-panel-list">
             {scenarioCandidates.map((scenario) => (
@@ -542,12 +590,9 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                 <div className="wire-row-title">手動比較</div>
                 <div className="wire-row-action">{selectedScenarioIds.length}件選択</div>
               </div>
-              <div className="wire-row-sub wire-manual-compare-copy">
-                チェックした予定を外した比較を作ります。
-              </div>
               <div className="wire-select-list">
                 {selectableScheduledEvents.length === 0 ? (
-                  <div className="wire-row-sub">比較対象になる予定イベントがありません</div>
+                  <div className="wire-row-sub">対象なし</div>
                 ) : (
                   selectableScheduledEvents.map((event) => (
                     <label key={event.id} className="wire-select-item">
@@ -593,23 +638,27 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
                 >
                   <div className="wire-list-top">
                     <div className="wire-row-title">{scenario.label}</div>
-                    <div
-                      className={
-                        Number(scenario.diff.lowestTheoreticalBalanceDelta) >= 0 ? "ok" : "danger"
-                      }
-                    >
-                      {formatCurrency(scenario.diff.lowestTheoreticalBalanceDelta)}
+                    <div className="wire-row-action">
+                      projected {formatSignedCurrency(scenario.diff.endingProjectedCashDelta)}
                     </div>
                   </div>
                   <div className="wire-row-sub">
-                    projected short {scenario.diff.projectedShortCountDelta >= 0 ? "+" : ""}
-                    {scenario.diff.projectedShortCountDelta} / ending{" "}
-                    {formatCurrency(scenario.diff.endingTheoreticalBalanceDelta)}
+                    ending projected {formatSignedCurrency(scenario.diff.endingProjectedCashDelta)}
                   </div>
                   <div className="wire-row-sub">
-                    actual short {scenario.diff.shortCountDelta >= 0 ? "+" : ""}
-                    {scenario.diff.shortCountDelta} / actual ending{" "}
-                    {formatCurrency(scenario.diff.endingActualBalanceDelta)}
+                    ending cash {formatSignedCurrency(scenario.diff.endingCashDelta)}
+                  </div>
+                  <div className="wire-row-sub">
+                    ending planned outflow {formatSignedCurrency(scenario.diff.endingPlannedOutflowDelta)}
+                  </div>
+                  <div className="wire-row-sub">
+                    lowest projected {formatSignedCurrency(scenario.diff.lowestProjectedCashDelta)} / lowest cash{" "}
+                    {formatSignedCurrency(scenario.diff.lowestCashDelta)}
+                  </div>
+                  <div className="wire-row-sub">
+                    negative days {scenario.diff.projectedNegativeDaysDelta >= 0 ? "+" : ""}
+                    {scenario.diff.projectedNegativeDaysDelta} / account shortage {scenario.diff.shortCountDelta >= 0 ? "+" : ""}
+                    {scenario.diff.shortCountDelta}
                   </div>
                   <div className="wire-inline-actions">
                     <button
@@ -632,12 +681,10 @@ export function SimulationPageClient({ initialData }: { initialData: DashboardPa
             ) : (
               <div className="wire-list-item">
                 <div className="wire-list-top">
-                  <div className="wire-row-title">追加で欲しい UI</div>
+                  <div className="wire-row-title">比較なし</div>
                   <div className="wire-badge-mock">Mock</div>
                 </div>
-                <div className="wire-row-sub">
-                  複数比較の保存、比較履歴、ベース切替は API 未整備のため後続
-                </div>
+                <div className="wire-row-sub">保存機能は後続</div>
               </div>
             )}
           </div>

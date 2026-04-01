@@ -17,33 +17,34 @@ export type SimulationComparisonResponse = {
     simulation: BuiltSimulation;
     diff: {
       shortCountDelta: number;
-      projectedShortCountDelta: number;
-      lowestTheoreticalBalanceDelta: string;
-      lowestActualBalanceDelta: string;
-      endingTheoreticalBalanceDelta: string;
-      endingActualBalanceDelta: string;
+      projectedNegativeDaysDelta: number;
+      lowestProjectedCashDelta: string;
+      lowestCashDelta: string;
+      endingPlannedOutflowDelta: string;
+      endingProjectedCashDelta: string;
+      endingCashDelta: string;
     };
   }>;
 };
 
-function getLowestTheoreticalBalance(simulation: BuiltSimulation) {
+function getLowestProjectedCash(simulation: BuiltSimulation) {
   if (simulation.snapshots.length === 0) {
     return 0;
   }
 
   return simulation.snapshots.reduce((lowest, snapshot) => {
-    const current = Number(snapshot.theoreticalBalance);
+    const current = Number(snapshot.projectedCash);
     return current < lowest ? current : lowest;
   }, Number.POSITIVE_INFINITY);
 }
 
-function getLowestActualBalance(simulation: BuiltSimulation) {
+function getLowestCash(simulation: BuiltSimulation) {
   if (simulation.snapshots.length === 0) {
     return 0;
   }
 
   return simulation.snapshots.reduce((lowest, snapshot) => {
-    const current = Number(snapshot.actualBalance);
+    const current = Number(snapshot.cash);
     return current < lowest ? current : lowest;
   }, Number.POSITIVE_INFINITY);
 }
@@ -53,15 +54,19 @@ function getShortCount(simulation: BuiltSimulation) {
 }
 
 function getProjectedShortCount(simulation: BuiltSimulation) {
-  return simulation.snapshots.filter((snapshot) => Number(snapshot.theoreticalBalance) < 0).length;
+  return simulation.snapshots.filter((snapshot) => Number(snapshot.projectedCash) < 0).length;
 }
 
-function getEndingTheoreticalBalance(simulation: BuiltSimulation) {
-  return Number(simulation.snapshots.at(-1)?.theoreticalBalance ?? 0);
+function getEndingProjectedCash(simulation: BuiltSimulation) {
+  return Number(simulation.snapshots.at(-1)?.projectedCash ?? 0);
 }
 
-function getEndingActualBalance(simulation: BuiltSimulation) {
-  return Number(simulation.snapshots.at(-1)?.actualBalance ?? 0);
+function getEndingCash(simulation: BuiltSimulation) {
+  return Number(simulation.snapshots.at(-1)?.cash ?? 0);
+}
+
+function getEndingPlannedOutflow(simulation: BuiltSimulation) {
+  return Number(simulation.snapshots.at(-1)?.plannedOutflow ?? 0);
 }
 
 export async function buildSimulationComparison(
@@ -85,19 +90,22 @@ export async function buildSimulationComparison(
         simulation,
         diff: {
           shortCountDelta: getShortCount(simulation) - getShortCount(base),
-          projectedShortCountDelta:
+          projectedNegativeDaysDelta:
             getProjectedShortCount(simulation) - getProjectedShortCount(base),
-          lowestTheoreticalBalanceDelta: (
-            getLowestTheoreticalBalance(simulation) - getLowestTheoreticalBalance(base)
+          lowestProjectedCashDelta: (
+            getLowestProjectedCash(simulation) - getLowestProjectedCash(base)
           ).toFixed(2),
-          lowestActualBalanceDelta: (
-            getLowestActualBalance(simulation) - getLowestActualBalance(base)
+          lowestCashDelta: (
+            getLowestCash(simulation) - getLowestCash(base)
           ).toFixed(2),
-          endingTheoreticalBalanceDelta: (
-            getEndingTheoreticalBalance(simulation) - getEndingTheoreticalBalance(base)
+          endingPlannedOutflowDelta: (
+            getEndingPlannedOutflow(simulation) - getEndingPlannedOutflow(base)
           ).toFixed(2),
-          endingActualBalanceDelta: (
-            getEndingActualBalance(simulation) - getEndingActualBalance(base)
+          endingProjectedCashDelta: (
+            getEndingProjectedCash(simulation) - getEndingProjectedCash(base)
+          ).toFixed(2),
+          endingCashDelta: (
+            getEndingCash(simulation) - getEndingCash(base)
           ).toFixed(2)
         }
       };

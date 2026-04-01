@@ -6,8 +6,9 @@ export function buildDemoSimulation() {
     endDate: "2026-03-06",
     threshold: "0",
     defaultCardId: "default-card",
-    initialTheoreticalBalance: "1000",
+    initialProjectedCash: "1000",
     initialActualBalance: "1000",
+    initialPlannedOutflow: "0",
     liquidAccounts: [
       {
         id: "main-bank",
