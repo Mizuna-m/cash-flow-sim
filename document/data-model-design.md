@@ -33,6 +33,15 @@
 
 ---
 
+### 1.5 残高レイヤー設計
+
+* 家計簿・分析と資金繰りを分離する
+* 主に保持したい残高は `cash / cash_by_account / card_debt / planned_outflow`
+* 将来は `loan_debt / locked_assets` を並列追加できる構成にする
+* `theoretical_balance` のような一括集約値を主役にしない
+
+---
+
 ## 2. エンティティ（更新）
 
 ---
@@ -107,6 +116,11 @@
 * initial_balance
 * is_active
 
+補足:
+
+* cash / bank は `cash_by_account` の元になる
+* credit / loan / investment はそれぞれ別レイヤーの残高源泉として扱う
+
 ---
 
 ### 2.4 CreditCard（更新）
@@ -119,6 +133,26 @@
 * payment_day
 * account_id（引落口座）
 * currency
+
+---
+
+### 2.5 イベント状態（将来拡張）
+
+イベントは将来的に次の状態を持てるようにする。
+
+* planned
+* confirmed
+* settled
+* adjusted
+* cancelled
+* deferred
+
+用途:
+
+* 予定の確定化
+* 確定後の請求修正
+* 中止・延期の履歴管理
+* 家計簿イベントと資金繰りイベントの橋渡し
 
 ---
 

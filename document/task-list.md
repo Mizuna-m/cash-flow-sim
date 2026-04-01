@@ -75,9 +75,16 @@ Status の意味:
 * 大量入力前提の UX 改善として、取引先・取引先詳細・種別階層・Project・口座・カードの強いサジェストと、キーボード完結の入力体験を入れる方針を追加した
 * `api/import/spreadsheet` を追加し、`Financial Analysis` の `支出 / 収入 / 定期支出` を ODS/CSV から dry-run / import できる初版導線を進めている
 * import preview では既存 transaction の `payee` 履歴から `category_path / project / account / card` を補完候補として提案できるようにした
+* 残高モデルは `理論/現実` の二軸だけでは将来の借入・リボ・投資を表しにくいため、`cash / cash_by_account / card_debt / planned_outflow` を主軸とする再設計を検討し始めた
+* 予定から確定、さらに口座出納へ反映されるまでの `planned / confirmed / settled / adjusted / cancelled / deferred` のイベントライフサイクルを仕様化する方針に入った
+* `npm run build` 後に `podman compose restart` まで回す、依存追加時は container 側 `node_modules` も確認する、などの暗黙知を `development-playbook.md` に集約し始めた
+* 残高モデル再設計に向けて、現行 API / 型 / UI ラベルの読み替え計画を `balance-model-transition-plan.md` に整理し始めた
+* 残高モデル移行は deprecated を厚く持たず、責務のまとまりごとに小さめの破壊的更新を入れて整合を毎回取り切る方針にした
+* 残高モデル変更の抜け漏れ防止用に、ドキュメント・API・型・UI・テスト・手動確認を横断したチェックリスト `balance-model-change-checklist.md` を追加した
 
 次に着手するべきこと:
 
+* balance model の読み替え計画に沿って、まずチェックリスト単位で `actualBalance / liquidAccountBalances / cardBalances` の rename 範囲を固める
 * simulation の増分計算 / 月次スナップショットなど長期運用向けの高速化方針を決める
 * accounts / liquid account の表示順を明示管理するか判断する
 * カード引落予測に月次の支払日オーバーライドを入れるか判断する
@@ -118,7 +125,7 @@ Status の意味:
 | T09 | seed データセット作成 | DOING | T06,T07,T08 | 主要ケースを1回で投入でき、実 DB に適用済み |
 | T10 | イベント正規化ロジック実装 | DOING | T09 | Transaction / ScheduledEvent / BalanceEvent / CardPayment を simulation 用に変換できる |
 | T11 | 同日内ソート実装 | DONE | T10 | `order_index` で順序制御できる |
-| T12 | 残高更新ロジック実装 | DOING | T10,T11 | 理論残高 / 現実残高 / カード残高に加えて、口座別 liquid balance が更新される |
+| T12 | 残高更新ロジック実装 | DOING | T10,T11 | `cash / cash_by_account / card_debt / planned_outflow` を中心に日次残高が更新される |
 | T13 | ショート判定実装 | DONE | T12 | 閾値未満の日を抽出できる |
 | T14 | カード引落予測生成 | DONE | T12 | 締日・支払日から forecast を作れる |
 | T15 | 日常支出予測生成 | DONE | T09 | 実績欠損日に予測適用できる |
@@ -128,7 +135,7 @@ Status の意味:
 | T19 | ダッシュボード画面 | DONE | T17 | 残高サマリが見える |
 | T20 | 取引入力画面 | DONE | T18 | Transaction 登録できる |
 | T21 | 予定入力画面 | DONE | T18 | ScheduledEvent 登録できる |
-| T22 | シミュレーション結果画面 | DONE | T17 | 理論/現実残高グラフが見える |
+| T22 | シミュレーション結果画面 | DONE | T17 | 日次の資金繰り結果と比較表示が見える |
 | T23 | Project / Category / Group 集計画面 | TODO | T18 | Project別、種別階層別、種別グループ相当の集計が見える |
 | T24 | イベント ON/OFF | DOING | T21,T22 | ScheduledEvent の無効化 PATCH と比較反映を追加済み。再有効化導線は限定的 |
 | T25 | シナリオ比較 UI/API | DOING | T24 | compare API、差分表示、手動選択 UI、複数比較保持を追加済み。比較の保存やベース切替は未実装 |
